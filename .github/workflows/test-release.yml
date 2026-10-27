@@ -1,0 +1,144 @@
+name: Publish bench test release
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/test-release.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release-v1.0.0-test
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      RELEASE_TAG: v1.0.0-test
+      DRONE_TOOLS_ROOT: ${{ runner.temp }}/drone-tooling
+      DRONE_TOOLING_ROOT: ${{ runner.temp }}/drone-tooling
+    steps:
+      - name: Check out exact tested source tag
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: v1.0.0-test
+          path: source
+          persist-credentials: false
+      - name: Prepare Git-only status channel
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          path: status
+      - name: Initialize status reporter
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/status"
+          branch="release-status/$RELEASE_TAG"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null 2>&1; then
+            git fetch origin "$branch"
+            git switch -C "$branch" FETCH_HEAD
+          else
+            git switch -c "$branch"
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cat > "$RUNNER_TEMP/report-release.sh" <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/status"
+          export RELEASE_PHASE="$1"
+          python3 - <<'PY'
+          import json,os,pathlib,datetime
+          report={'phase':os.environ['RELEASE_PHASE'],'tag':os.environ['RELEASE_TAG'],
+                  'run_url':f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+                  'updated_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+          result=pathlib.Path(os.environ['RUNNER_TEMP'])/'release-result.json'
+          if result.exists(): report['release']=json.loads(result.read_text())
+          pathlib.Path('release-status.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+          git add release-status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Report $RELEASE_TAG: $RELEASE_PHASE"
+            git push origin "HEAD:refs/heads/release-status/$RELEASE_TAG"
+          fi
+          SCRIPT
+          chmod +x "$RUNNER_TEMP/report-release.sh"
+          "$RUNNER_TEMP/report-release.sh" running
+      - name: Install verified ESP32 tools and build
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/setup_toolchain.sh
+          export PLATFORMIO_CORE_DIR="$DRONE_TOOLS_ROOT/platformio"
+          export PATH="$DRONE_TOOLS_ROOT/pio-venv/bin:$PATH"
+          scripts/build_firmware.sh -j 4
+          "$RUNNER_TEMP/report-release.sh" firmware-built
+      - name: Install Flutter and Android tools
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/setup_flutter.sh
+          "$RUNNER_TEMP/report-release.sh" android-tools-ready
+      - name: Build Android debug APK
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          scripts/build_android.sh
+          "$RUNNER_TEMP/report-release.sh" apk-built
+      - name: Package exact tagged source and checksums
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          git archive --format=zip --prefix=ESP32-Drone/ --output="$RUNNER_TEMP/release-assets/ESP32-Drone-source-v1.0.0-test.zip" "$RELEASE_TAG"
+          cp firmware/.pio/build/esp32dev/firmware.bin "$RUNNER_TEMP/release-assets/ESP32-Drone-firmware-bench.bin"
+          cp mobile_app/build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/release-assets/ESP32-Drone-Android-debug.apk"
+          cd "$RUNNER_TEMP/release-assets"
+          sha256sum *.zip *.bin *.apk > SHA256SUMS.txt
+      - name: Create test release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets="$RUNNER_TEMP/release-assets"
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          ESP32-WROOM-32 bench firmware and Flutter Android controller, built from tag v1.0.0-test.
+
+          This is a prerelease for bench development, NOT flight-certified firmware. Real motor output remains locked. Local AP credentials must be provisioned and firmware rebuilt for hardware use. The APK is universal and debug-signed. No physical ESP32, ESC, sensor or Android device validation is claimed. See docs/validation.md and docs/safety.md.
+
+          Assets: source ZIP from the exact tag, application BIN (use PlatformIO for correct bootloader/partition offsets), Android APK, and SHA256SUMS.txt. CI builds the same tagged source; the CI debug signing key differs from the cloud workspace key.
+          NOTES
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --title "$RELEASE_TAG — ESP32 Drone bench test" --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi
+          # Never silently replace existing release files. Failed/retried jobs stop on a conflicting asset.
+          gh release upload "$RELEASE_TAG" "$assets/ESP32-Drone-firmware-bench.bin" "$assets/ESP32-Drone-Android-debug.apk" "$assets/ESP32-Drone-source-v1.0.0-test.zip" "$assets/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release-result.json"
+          python3 - <<'PY'
+          import os,json,pathlib,hashlib
+          release=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'release-result.json').read_text())
+          remote={a['name']:a for a in release['assets']}
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'release-assets'
+          for p in root.iterdir():
+              a=remote.get(p.name)
+              if not a or a['state']!='uploaded' or a['size']!=p.stat().st_size:
+                  raise RuntimeError('Upload verification failed: '+p.name)
+              digest=a.get('digest')
+              if digest and digest!='sha256:'+hashlib.file_digest(p.open('rb'),'sha256').hexdigest():
+                  raise RuntimeError('Remote digest mismatch: '+p.name)
+          PY
+          "$RUNNER_TEMP/report-release.sh" uploaded-and-verified
+      - name: Report failure without claiming upload success
+        if: failure()
+        shell: bash
+        run: |
+          if [[ -x "$RUNNER_TEMP/report-release.sh" ]]; then
+            "$RUNNER_TEMP/report-release.sh" failed
+          fi
