@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../controllers/flight_controller.dart';
 import '../models/telemetry.dart';
 import '../widgets/flight_widgets.dart';
+import '../widgets/connection_dialog.dart';
 
 class Console extends StatefulWidget {
   final FlightController flight;
@@ -13,6 +14,7 @@ class Console extends StatefulWidget {
 
 class _ConsoleState extends State<Console> {
   int page = 0;
+  bool _dialogOpen = false;
   FlightController get f => widget.flight;
   Telemetry? get t => f.telemetry;
   String reading(String field, [String unit = '', int decimals = 1]) {
@@ -21,98 +23,62 @@ class _ConsoleState extends State<Console> {
   }
 
   Future<bool> confirm(String title, String text) async {
-    f.releaseInputs();
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(title),
-            content: Text(text),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Confirm'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    if (!mounted || _dialogOpen) return false;
+    _dialogOpen = true;
+    final flight = f;
+    flight.releaseInputs();
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(title),
+          content: Text(text),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+      return mounted && identical(widget.flight, flight) && result == true;
+    } finally {
+      _dialogOpen = false;
+    }
   }
 
   Future<void> connection() async {
-    f.releaseInputs();
-    final address = TextEditingController(text: 'ws://192.168.4.1:81/ws');
-    final token = TextEditingController();
-    final connect = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Connect to drone AP'),
-        content: SizedBox(
-          width: 390,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Join ESP32_DRONE in phone Wi-Fi settings first. Keep mobile data/VPN routes from taking over this connection.',
-              ),
-              const SizedBox(height: 18),
-              TextField(
-                controller: address,
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-                decoration: const InputDecoration(
-                  labelText: 'WebSocket endpoint',
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: token,
-                obscureText: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: const InputDecoration(
-                  labelText: 'Session token (not saved)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Local ws:// is unencrypted. Use an isolated WPA2 AP; this console does not make the aircraft flight-ready.',
-                style: TextStyle(fontSize: 12, color: Colors.white54),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Connect'),
-          ),
-        ],
-      ),
-    );
-    final endpoint = address.text.trim(), enteredToken = token.text;
-    address.dispose();
-    token.dispose();
-    if (connect == true) {
-      try {
-        await f.link.connect(endpoint, enteredToken);
-      } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Connection failed. Check AP, address and firmware serial diagnostics.',
-              ),
+    if (!mounted || _dialogOpen) return;
+    _dialogOpen = true;
+    final flight = f;
+    flight.releaseInputs();
+    ConnectionDetails? details;
+    try {
+      details = await showDialog<ConnectionDetails>(
+        context: context,
+        builder: (_) => const ConnectionDialog(),
+      );
+    } finally {
+      _dialogOpen = false;
+    }
+    if (!mounted || !identical(widget.flight, flight) || details == null) {
+      return;
+    }
+    try {
+      await flight.link.connect(details.endpoint, details.token);
+    } catch (_) {
+      if (mounted && identical(widget.flight, flight)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Connection failed. Check AP, address and firmware serial diagnostics.',
             ),
-          );
-        }
+          ),
+        );
       }
     }
   }
@@ -123,20 +89,25 @@ class _ConsoleState extends State<Console> {
     builder: (context, _) => Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Row(
-          children: [
-            Icon(Icons.flight, color: Color(0xFF62E6C4)),
-            SizedBox(width: 10),
-            Text('DRONE /', style: TextStyle(letterSpacing: 3, fontSize: 18)),
-            Text(
-              ' BENCH',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white38,
-                letterSpacing: 2,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.flight, color: Color(0xFF62E6C4)),
+              SizedBox(width: 10),
+              Text('DRONE /', style: TextStyle(letterSpacing: 3, fontSize: 18)),
+              Text(
+                ' BENCH',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white38,
+                  letterSpacing: 2,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton.icon(
@@ -228,6 +199,7 @@ class _ConsoleState extends State<Console> {
                                     'Confirm ARM',
                                     'Remove all propellers. Secure the frame, verify supply and motor output lock. ARM is a separate action; no throttle command is sent by this dialog.',
                                   ) &&
+                                  mounted &&
                                   f.canArm) {
                                 f.link.send('arm', {'confirm': true});
                               }
@@ -546,6 +518,7 @@ class _ConsoleState extends State<Console> {
                                       ? 'Persist calibration explicitly? Flash is not written by telemetry or joystick updates.'
                                       : 'Follow docs/calibration.md. Propellers removed and frame stationary except during magnetometer rotation. Start ${item.value}?',
                                 ) &&
+                                mounted &&
                                 f.canConfigure) {
                               f.link.send('calibrate', {'target': item.key});
                             }
@@ -746,7 +719,9 @@ class _PidEditorState extends State<PidEditor> {
             FilledButton.tonalIcon(
               onPressed: widget.enabled
                   ? () async {
-                      if (!form.currentState!.validate()) return;
+                      if (!mounted || form.currentState?.validate() != true) {
+                        return;
+                      }
                       final gains = <String, dynamic>{
                         for (final entry in values.entries)
                           entry.key: <String, double>{
@@ -760,6 +735,7 @@ class _PidEditorState extends State<PidEditor> {
                             'Apply PID gains',
                             'Apply all rate and attitude gains while DISARMED? These are unverified parameters. These PID gains are RAM-only and reset after reboot.',
                           ) &&
+                          mounted &&
                           widget.enabled) {
                         widget.send(gains);
                       }

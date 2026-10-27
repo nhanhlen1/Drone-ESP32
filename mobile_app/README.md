@@ -40,3 +40,7 @@ Setup provides complete staged PID gains, a confirmation before applying RAM-onl
 Tests exercise a real local WebSocket handshake/auth/session timestamps and sequences, independent joystick pointers and cancellation, throttle retention/no jump, expo/dead zone, foreground and contact expiry, ARM/calibration gates, invalid GPS data and the disconnected dashboard. ESP32/phone Wi-Fi behavior, USB flashing, physical IMU signs, actual RTT/drop rate and Android device lifecycle still require hardware acceptance.
 
 The Dart UI and services are portable to iOS, but an iOS host scaffold/signing and Xcode build have not been generated or validated on this Linux machine. On a Mac, review Flutter iOS setup and add the platform with `flutter create --platforms=ios .`, then configure local network permissions and signing.
+
+## Bản sửa v1.0.1-test
+
+Ứng dụng `1.0.1` / build `2` sửa lỗi đóng dialog gây `_dependents.isEmpty`, callback sau unmount và các race reconnect WebSocket. Xem `docs/lifecycle-fix.md` cho nguyên nhân, bằng chứng và27test. APK debug mới có thể khác khóa ký so với APK do GitHub Actions tạo trước đây: nếu Android báo xung đột chữ ký, hãy gỡ bản debug cũ rồi cài APK mới. Firmware và thông số phần cứng giữ nguyên.

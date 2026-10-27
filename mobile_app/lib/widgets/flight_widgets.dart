@@ -30,6 +30,7 @@ class _FlightStickState extends State<FlightStick> {
   Offset throttleAnchor = Offset.zero;
   double anchorThrottle = 0;
   void update(Offset point) {
+    if (!mounted || !widget.enabled || pointer == null) return;
     final radius = math.min(size.width, size.height) * .37;
     final center = Offset(size.width / 2, size.height / 2);
     final delta = point - center;
@@ -49,13 +50,17 @@ class _FlightStickState extends State<FlightStick> {
     emit();
   }
 
-  void emit() => widget.onUpdate(
-    value.dx,
-    widget.throttle ? (value.dy + 1) / 2 : value.dy,
-    true,
-  );
+  void emit() {
+    if (!mounted || !widget.enabled || pointer == null) return;
+    widget.onUpdate(
+      value.dx,
+      widget.throttle ? (value.dy + 1) / 2 : value.dy,
+      true,
+    );
+  }
+
   void release() {
-    if (pointer == null) return;
+    if (!mounted || pointer == null) return;
     pulse?.cancel();
     pointer = null;
     value = Offset(0, widget.throttle ? widget.throttleValue * 2 - 1 : 0);
@@ -79,6 +84,10 @@ class _FlightStickState extends State<FlightStick> {
   @override
   void dispose() {
     pulse?.cancel();
+    pulse = null;
+    // Flutter may deliver up/cancel to the original hit-test target after it
+    // leaves the tree. Invalidate that pointer before its controller is disposed.
+    pointer = null;
     super.dispose();
   }
 
