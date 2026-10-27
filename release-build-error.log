@@ -1,0 +1,69 @@
+publish	Build Android debug APK	﻿2026-10-27T10:28:48.7907275Z ##[group]Run set -euo pipefail
+publish	Build Android debug APK	2026-10-27T10:28:48.7907479Z ^[[36;1mset -euo pipefail^[[0m
+publish	Build Android debug APK	2026-10-27T10:28:48.7907626Z ^[[36;1mscripts/build_android.sh^[[0m
+publish	Build Android debug APK	2026-10-27T10:28:48.7907794Z ^[[36;1m"$RUNNER_TEMP/report-release.sh" apk-built^[[0m
+publish	Build Android debug APK	2026-10-27T10:28:48.7960481Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+publish	Build Android debug APK	2026-10-27T10:28:48.7960664Z env:
+publish	Build Android debug APK	2026-10-27T10:28:48.7960777Z   RELEASE_TAG: v1.0.0-test
+publish	Build Android debug APK	2026-10-27T10:28:48.7960944Z   DRONE_TOOLS_ROOT: /home/runner/work/_temp/drone-tooling
+publish	Build Android debug APK	2026-10-27T10:28:48.7961150Z   DRONE_TOOLING_ROOT: /home/runner/work/_temp/drone-tooling
+publish	Build Android debug APK	2026-10-27T10:28:48.7961324Z ##[endgroup]
+publish	Build Android debug APK	2026-10-27T10:28:48.9756316Z Resolving dependencies...
+publish	Build Android debug APK	2026-10-27T10:28:49.0879890Z Downloading packages...
+publish	Build Android debug APK	2026-10-27T10:28:49.0964733Z   characters 1.4.0 (1.4.1 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0965087Z   clock 1.1.2 (1.1.3 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0965333Z   flutter_lints 5.0.0 (6.0.0 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0965568Z   lints 5.1.1 (6.1.0 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0965919Z   matcher 0.12.17 (0.12.20 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0966192Z   material_color_utilities 0.11.1 (0.13.1 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0966514Z   meta 1.16.0 (1.19.0 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0966744Z   stack_trace 1.12.1 (1.12.2 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0967033Z   test_api 0.7.6 (0.7.15 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0967312Z   vector_math 2.2.0 (2.4.4 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0967570Z   web 1.1.1 (1.1.2 available)
+publish	Build Android debug APK	2026-10-27T10:28:49.0976894Z Got dependencies!
+publish	Build Android debug APK	2026-10-27T10:28:49.0983391Z 11 packages have newer versions incompatible with dependency constraints.
+publish	Build Android debug APK	2026-10-27T10:28:49.0983843Z Try `flutter pub outdated` for more information.
+publish	Build Android debug APK	2026-10-27T10:28:49.5102392Z Downloading android-arm-profile/linux-x64 tools...                 216ms
+publish	Build Android debug APK	2026-10-27T10:28:49.6790663Z Downloading android-arm-release/linux-x64 tools...                 117ms
+publish	Build Android debug APK	2026-10-27T10:28:49.9281223Z Downloading android-arm64-profile/linux-x64 tools...               203ms
+publish	Build Android debug APK	2026-10-27T10:28:50.1612839Z Downloading android-arm64-release/linux-x64 tools...               181ms
+publish	Build Android debug APK	2026-10-27T10:28:50.3873012Z Downloading android-x64-profile/linux-x64 tools...                 178ms
+publish	Build Android debug APK	2026-10-27T10:28:50.6060529Z Downloading android-x64-release/linux-x64 tools...                 166ms
+publish	Build Android debug APK	2026-10-27T10:28:50.7566054Z Resolving dependencies...
+publish	Build Android debug APK	2026-10-27T10:28:50.8701720Z Downloading packages...
+publish	Build Android debug APK	2026-10-27T10:28:50.8779623Z   characters 1.4.0 (1.4.1 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8780143Z   clock 1.1.2 (1.1.3 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8780393Z   flutter_lints 5.0.0 (6.0.0 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8780683Z   lints 5.1.1 (6.1.0 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8780909Z   matcher 0.12.17 (0.12.20 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8781210Z   material_color_utilities 0.11.1 (0.13.1 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8781516Z   meta 1.16.0 (1.19.0 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8781753Z   stack_trace 1.12.1 (1.12.2 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8782035Z   test_api 0.7.6 (0.7.15 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8782313Z   vector_math 2.2.0 (2.4.4 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8782612Z   web 1.1.1 (1.1.2 available)
+publish	Build Android debug APK	2026-10-27T10:28:50.8792862Z Got dependencies!
+publish	Build Android debug APK	2026-10-27T10:28:50.8799151Z 11 packages have newer versions incompatible with dependency constraints.
+publish	Build Android debug APK	2026-10-27T10:28:50.8799553Z Try `flutter pub outdated` for more information.
+publish	Build Android debug APK	2026-10-27T10:30:21.2362631Z Running Gradle task 'assembleDebug'...                          
+publish	Build Android debug APK	2026-10-27T10:30:21.2367254Z 
+publish	Build Android debug APK	2026-10-27T10:30:21.2368683Z FAILURE: Build failed with an exception.
+publish	Build Android debug APK	2026-10-27T10:30:21.2368908Z 
+publish	Build Android debug APK	2026-10-27T10:30:21.2369107Z * What went wrong:
+publish	Build Android debug APK	2026-10-27T10:30:21.2371731Z Execution failed for task ':app:checkDebugDuplicateClasses'.
+publish	Build Android debug APK	2026-10-27T10:30:21.2372214Z > Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
+publish	Build Android debug APK	2026-10-27T10:30:21.2374915Z    > Failed to transform x86_64_debug-1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca.jar (io.flutter:x86_64_debug:1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca) to match attributes {artifactType=enumerated-runtime-classes, org.gradle.category=library, org.gradle.libraryelements=jar, org.gradle.status=release, org.gradle.usage=java-runtime}.
+publish	Build Android debug APK	2026-10-27T10:30:21.2377397Z       > Execution failed for JetifyTransform: /home/runner/work/_temp/drone-tooling/gradle/caches/modules-2/files-2.1/io.flutter/x86_64_debug/1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca/1a6ff0e9a632d8026aa59e1a77a4ea2c8c4b6838/x86_64_debug-1.0.0-035316565ad77281a75305515e4682e6c4c6f7ca.jar.
+publish	Build Android debug APK	2026-10-27T10:30:21.2378552Z          > Java heap space
+publish	Build Android debug APK	2026-10-27T10:30:21.2378656Z 
+publish	Build Android debug APK	2026-10-27T10:30:21.2378705Z * Try:
+publish	Build Android debug APK	2026-10-27T10:30:21.2378853Z > Run with --stacktrace option to get the stack trace.
+publish	Build Android debug APK	2026-10-27T10:30:21.2379066Z > Run with --info or --debug option to get more log output.
+publish	Build Android debug APK	2026-10-27T10:30:21.2379257Z > Run with --scan to get full insights.
+publish	Build Android debug APK	2026-10-27T10:30:21.2379436Z > Get more help at https://help.gradle.org.
+publish	Build Android debug APK	2026-10-27T10:30:21.2379547Z 
+publish	Build Android debug APK	2026-10-27T10:30:21.2379595Z BUILD FAILED in 1m 30s
+publish	Build Android debug APK	2026-10-27T10:30:21.6380739Z Running Gradle task 'assembleDebug'...                             90.6s
+publish	Build Android debug APK	2026-10-27T10:30:21.6438236Z Gradle task assembleDebug failed with exit code 1
+publish	Build Android debug APK	2026-10-27T10:30:21.6603888Z ##[error]Process completed with exit code 1.
