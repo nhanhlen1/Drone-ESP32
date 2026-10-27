@@ -16,9 +16,12 @@ jobs:
     timeout-minutes: 40
     env:
       RELEASE_TAG: v1.0.0-test
-      DRONE_TOOLS_ROOT: ${{ runner.temp }}/drone-tooling
-      DRONE_TOOLING_ROOT: ${{ runner.temp }}/drone-tooling
     steps:
+      - name: Set writable tool directories
+        shell: bash
+        run: |
+          echo "DRONE_TOOLS_ROOT=$RUNNER_TEMP/drone-tooling" >> "$GITHUB_ENV"
+          echo "DRONE_TOOLING_ROOT=$RUNNER_TEMP/drone-tooling" >> "$GITHUB_ENV"
       - name: Check out exact tested source tag
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
