@@ -1,6 +1,6 @@
 {
-  "phase": "running",
+  "phase": "firmware-built",
   "tag": "v1.0.0-test",
   "run_url": "https://github.com/nhanhlen1/Drone-ESP32/actions/runs/40488529021",
-  "updated_utc": "2026-10-27T10:26:56.917358+00:00"
+  "updated_utc": "2026-10-27T10:27:38.386229+00:00"
 }
