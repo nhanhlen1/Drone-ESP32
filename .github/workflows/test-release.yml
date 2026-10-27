@@ -91,6 +91,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Fresh Jetifier transforms exceed 2 GiB on a cold runner.
+          # Override resource limits only; the tagged application stays unchanged.
+          export GRADLE_OPTS='-Dorg.gradle.jvmargs=-Xmx4G -Dorg.gradle.workers.max=2'
           scripts/build_android.sh
           "$RUNNER_TEMP/report-release.sh" apk-built
       - name: Package exact tagged source and checksums
