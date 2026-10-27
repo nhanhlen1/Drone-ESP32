@@ -8,14 +8,14 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: release-v1.0.0-test
+  group: release-v1.0.1-test
   cancel-in-progress: false
 jobs:
   publish:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
-      RELEASE_TAG: v1.0.0-test
+      RELEASE_TAG: v1.0.1-test
     steps:
       - name: Set writable tool directories
         shell: bash
@@ -25,7 +25,7 @@ jobs:
       - name: Check out exact tested source tag
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: v1.0.0-test
+          ref: v1.0.1-test
           path: source
           persist-credentials: false
       - name: Prepare Git-only status channel
@@ -69,16 +69,6 @@ jobs:
           SCRIPT
           chmod +x "$RUNNER_TEMP/report-release.sh"
           "$RUNNER_TEMP/report-release.sh" running
-      - name: Install verified ESP32 tools and build
-        working-directory: source
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash scripts/setup_toolchain.sh
-          export PLATFORMIO_CORE_DIR="$DRONE_TOOLS_ROOT/platformio"
-          export PATH="$DRONE_TOOLS_ROOT/pio-venv/bin:$PATH"
-          scripts/build_firmware.sh -j 4
-          "$RUNNER_TEMP/report-release.sh" firmware-built
       - name: Install Flutter and Android tools
         working-directory: source
         shell: bash
@@ -94,7 +84,7 @@ jobs:
           # Fresh Jetifier transforms exceed 2 GiB on a cold runner.
           # Override resource limits only; the tagged application stays unchanged.
           export GRADLE_OPTS='-Dorg.gradle.jvmargs=-Xmx4G -Dorg.gradle.workers.max=2'
-          scripts/build_android.sh
+          scripts/build_android.sh 2>&1 | tee "$RUNNER_TEMP/android-build.log"
           "$RUNNER_TEMP/report-release.sh" apk-built
       - name: Package exact tagged source and checksums
         working-directory: source
@@ -102,11 +92,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/release-assets"
-          git archive --format=zip --prefix=ESP32-Drone/ --output="$RUNNER_TEMP/release-assets/ESP32-Drone-source-v1.0.0-test.zip" "$RELEASE_TAG"
-          cp firmware/.pio/build/esp32dev/firmware.bin "$RUNNER_TEMP/release-assets/ESP32-Drone-firmware-bench.bin"
-          cp mobile_app/build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/release-assets/ESP32-Drone-Android-debug.apk"
+          git archive --format=zip --prefix=ESP32-Drone/ --output="$RUNNER_TEMP/release-assets/ESP32-Drone-source-v1.0.1-test.zip" "$RELEASE_TAG"
+          cp mobile_app/build/app/outputs/flutter-apk/app-debug.apk "$RUNNER_TEMP/release-assets/ESP32-Drone-Android-v1.0.1-test.apk"
           cd "$RUNNER_TEMP/release-assets"
-          sha256sum *.zip *.bin *.apk > SHA256SUMS.txt
+          sha256sum *.zip *.apk > SHA256SUMS.txt
       - name: Create test release and upload assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -115,17 +104,17 @@ jobs:
           set -euo pipefail
           assets="$RUNNER_TEMP/release-assets"
           cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
-          ESP32-WROOM-32 bench firmware and Flutter Android controller, built from tag v1.0.0-test.
+          Flutter Android 1.0.1 / build 2, built from the exact fixed tag v1.0.1-test. Fixes dialog controller disposal causing _dependents.isEmpty, stale widget callbacks, WebSocket reconnect races and joystick callbacks after disposal.
 
-          This is a prerelease for bench development, NOT flight-certified firmware. Real motor output remains locked. Local AP credentials must be provisioned and firmware rebuilt for hardware use. The APK is universal and debug-signed. No physical ESP32, ESC, sensor or Android device validation is claimed. See docs/validation.md and docs/safety.md.
+          Flutter analyze is clean and 27 tests passed. The APK is universal and debug-signed. Firmware and hardware configuration are unchanged; do not reflash the ESP32 for this update. No physical phone/ESP32 validation is claimed.
 
-          Assets: source ZIP from the exact tag, application BIN (use PlatformIO for correct bootloader/partition offsets), Android APK, and SHA256SUMS.txt. CI builds the same tagged source; the CI debug signing key differs from the cloud workspace key.
+          Assets: fixed Android APK, source ZIP from the exact tag, SHA256SUMS.txt. Uninstall the previous debug app if Android reports a signing conflict, then install this APK. Connect to the ESP32 AP at ws://192.168.4.1:81/ws with the firmware session token. Keep DISARMED while verifying connection.
           NOTES
           if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --title "$RELEASE_TAG — ESP32 Drone bench test" --notes-file "$RUNNER_TEMP/release-notes.md"
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --title "$RELEASE_TAG — Flutter lifecycle fix" --notes-file "$RUNNER_TEMP/release-notes.md"
           fi
           # Never silently replace existing release files. Failed/retried jobs stop on a conflicting asset.
-          gh release upload "$RELEASE_TAG" "$assets/ESP32-Drone-firmware-bench.bin" "$assets/ESP32-Drone-Android-debug.apk" "$assets/ESP32-Drone-source-v1.0.0-test.zip" "$assets/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" "$assets/ESP32-Drone-Android-v1.0.1-test.apk" "$assets/ESP32-Drone-source-v1.0.1-test.zip" "$assets/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release-result.json"
           python3 - <<'PY'
           import os,json,pathlib,hashlib
@@ -140,11 +129,17 @@ jobs:
               if digest and digest!='sha256:'+hashlib.file_digest(p.open('rb'),'sha256').hexdigest():
                   raise RuntimeError('Remote digest mismatch: '+p.name)
           PY
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release-result.json"
           "$RUNNER_TEMP/report-release.sh" uploaded-and-verified
       - name: Report failure without claiming upload success
         if: failure()
         shell: bash
         run: |
           if [[ -x "$RUNNER_TEMP/report-release.sh" ]]; then
+            if [[ -f "$RUNNER_TEMP/android-build.log" ]]; then
+              tail -n 160 "$RUNNER_TEMP/android-build.log" > "$GITHUB_WORKSPACE/status/release-build-error.log"
+              git -C "$GITHUB_WORKSPACE/status" add -f release-build-error.log
+            fi
             "$RUNNER_TEMP/report-release.sh" failed
           fi
