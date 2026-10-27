@@ -1,6 +1,6 @@
 {
-  "phase": "android-tools-ready",
+  "phase": "apk-built",
   "tag": "v1.0.1-test",
   "run_url": "https://github.com/nhanhlen1/Drone-ESP32/actions/runs/40506600956",
-  "updated_utc": "2026-10-27T12:48:57.617821+00:00"
+  "updated_utc": "2026-10-27T12:51:58.901496+00:00"
 }
