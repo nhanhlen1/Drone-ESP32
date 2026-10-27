@@ -115,7 +115,10 @@ jobs:
           fi
           # Never silently replace existing release files. Failed/retried jobs stop on a conflicting asset.
           gh release upload "$RELEASE_TAG" "$assets/ESP32-Drone-Android-v1.0.1-test.apk" "$assets/ESP32-Drone-source-v1.0.1-test.zip" "$assets/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/release-result.json"
+          # Draft releases may not resolve through the tag endpoint until published.
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.tag_name == \"$RELEASE_TAG\") | .id")"
+          [[ "$release_id" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > "$RUNNER_TEMP/release-result.json"
           python3 - <<'PY'
           import os,json,pathlib,hashlib
           release=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'release-result.json').read_text())
