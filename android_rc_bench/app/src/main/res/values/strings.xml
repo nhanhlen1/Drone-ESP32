@@ -1,0 +1,20 @@
+<resources>
+    <string name="ui_expo">Expo %1$d%% • dead zone 6%%</string>
+    <string name="ui_channel_verified">Tôi đã đối chiếu RC%1$d trên FC</string>
+    <string name="ui_integer">%1$d</string>
+    <string name="ui_armed">ARM: %1$s</string>
+    <string name="ui_target">TARGET SYS / COMP: %1$s</string>
+    <string name="ui_tx_channels">TX override  %1$s</string>
+    <string name="ui_rx_channels">RX RC_CHANNELS  %1$s</string>
+    <string name="ui_timing">TX %1$s  •  RX %2$s  •  %3$.1f Hz / mục tiêu 20</string>
+    <string name="ui_diagnostics">TX %1$d byte / %2$d override\nRX %3$d byte\nCRC %4$d • parser %5$d • sequence gaps %6$d\n\n%7$s</string>
+    <string name="ui_throttle">THROTTLE %1$d%%</string>
+    <string name="ui_single_value">RC%1$d • lệnh chuẩn hóa %2$.2f</string>
+    <string name="ui_single_selected">RC%1$d • chỉ kênh được chọn thay đổi</string>
+    <string name="ui_channels_missing">— / — / — / —</string>
+    <string name="ui_channel_ignore">IGNORE</string>
+    <string name="ui_channel_unknown">—</string>
+    <string name="ui_channel_value">%1$d:%2$s</string>
+    <string name="ui_age_ms">%1$d ms trước</string>
+    <string name="ui_age_missing">chưa có</string>
+</resources>

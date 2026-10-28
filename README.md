@@ -1,5 +1,7 @@
 # ESP32 Drone — bộ điều khiển bench và ứng dụng Android
 
+Ứng dụng **Kotlin Android Studio cho ArduCopter/MAVLink2** hiện nằm riêng tại [`android_rc_bench`](android_rc_bench/README.md): TCP `192.168.4.1:5760`, kiểm tra RC chỉ khi DISARMED. Dự án này dùng firmware ArduPilot đang hoạt động trên thiết bị của bạn; không cần nạp firmware Arduino/WebSocket prototype bên dưới để dùng app mới.
+
 Dự án điều khiển quadcopter ESP32-WROOM-32 qua Wi-Fi AP và WebSocket. Firmware Arduino/PlatformIO đọc ICM-20948, BMP280, INA219 và GPS NMEA, ước lượng tư thế, chạy PID nối tầng, mixer Quad X và phát telemetry cho ứng dụng Flutter.
 
 **Đây là mã phát triển để kiểm thử bench. Build thành công không chứng minh đủ an toàn để bay. Đầu ra motor mặc định ở mock mode; không cấp tín hiệu cho ESC thật. Không lắp cánh quạt khi nạp firmware, hiệu chuẩn hoặc kiểm thử motor.** PID ban đầu chưa được tuning trên khung thực tế. Các chế độ giữ độ cao/vị trí, RTH và tự hạ cánh chưa được triển khai.
