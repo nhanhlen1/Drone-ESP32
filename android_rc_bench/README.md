@@ -25,7 +25,7 @@ PowerShell từ `android_rc_bench`:
 .\gradlew.bat assembleDebug
 ```
 
-Source hiện tại đã qua 47 test và build APK; lint không có error, có 2 warning được ghi trong báo cáo xác thực. APK sau build thành công nằm ở `app\build\outputs\apk\debug\app-debug.apk`. Chỉ việc có source/wrapper không chứng minh đã build APK; kết quả được ghi riêng trong [báo cáo xác thực](docs/validation.md). Có thể chạy ba task cùng một lệnh Gradle; bảo toàn exit code khi thu log.
+Source hiện tại đã qua 49 test và build APK; lint không có error, có 2 warning được ghi trong báo cáo xác thực. APK sau build thành công nằm ở `app\build\outputs\apk\debug\app-debug.apk`. Chỉ việc có source/wrapper không chứng minh đã build APK; kết quả được ghi riêng trong [báo cáo xác thực](docs/validation.md). Có thể chạy ba task cùng một lệnh Gradle; bảo toàn exit code khi thu log.
 
 ## Quy trình bench ngắn
 
@@ -41,7 +41,7 @@ Kiến trúc và ranh giới giữa parser/controller/UI được mô tả trong
 
 ## Bàn giao
 
-APK debug và ZIP project Android native dự kiến được đính kèm GitHub Release `rc-bench-v0.1.0-test`. Việc build cục bộ thành công chưa xác nhận upload/publication; xem kết quả workflow và release thực tế trước khi dùng link tải. Package `dev.drone.rcbench` riêng nên có thể cài cạnh Flutter.
+APK debug và ZIP project Android native dự kiến được đính kèm GitHub Release `rc-bench-v0.1.1-test`. Việc build cục bộ thành công chưa xác nhận upload/publication; xem kết quả workflow và release thực tế trước khi dùng link tải. Package `dev.drone.rcbench` riêng nên có thể cài cạnh Flutter.
 
 ## Log bench
 

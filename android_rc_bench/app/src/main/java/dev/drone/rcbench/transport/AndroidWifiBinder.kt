@@ -16,9 +16,9 @@ class AndroidWifiBinder(context:Context,private val onLost:()->Unit):ChannelBind
     private val bound=AtomicReference<Network?>()
     @Volatile private var closed=false
     private val callback=object:ConnectivityManager.NetworkCallback(){
-        override fun onLost(network:Network){if(!closed&&bound.compareAndSet(network,null))onLost()}
+        override fun onLost(network:Network){if(!closed&&clearLostNetwork(bound,network))onLost()}
         override fun onCapabilitiesChanged(network:Network,caps:NetworkCapabilities){
-            if(!closed&&!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)&&bound.compareAndSet(network,null))onLost()
+            if(!closed&&!caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)&&clearLostNetwork(bound,network))onLost()
         }
     }
     init {
