@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.mavlink.Mavlink2Test" tests="19" skipped="0" failures="0" errors="0" timestamp="2026-10-28T18:17:04" hostname="017cdf9b75f1" time="0.014">
+  <properties/>
+  <testcase name="corruptCrcAndGarbageResynchronizeWithoutEmittingBadFrame" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="encoderRejectsReleaseBroadcastAndBadChannelCounts" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.001"/>
+  <testcase name="sentinelsAndUnsigned32BitFieldsDecodeExactly" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="rcWireFieldsUseIgnoreNotReleaseAndDynamicTarget" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="corruptKnownPayloadLengthRecoversWithoutWaitingFor255Bytes" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.001"/>
+  <testcase name="signedFramesAreConsumedButNeverTrusted" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="zeroPayloadAndNonfiniteAttitudeNeverReadOutsidePacket" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="independentlySignedReferenceIsExplicitlyRejected" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="v1BodyWithFdIsNotDecodedAsV2" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.001"/>
+  <testcase name="partiallyTruncatedSysStatusExtensionUsesZeroForMissingBytes" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="disconnectResetDropsPartialOldStream" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="sixOfficialTelemetryMessagesMatchReferenceWireLayoutAndUnits" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.003"/>
+  <testcase name="splitAtEveryBoundaryAndCoalescedPackets" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.002"/>
+  <testcase name="sequenceRolloverAndSourceIdsAreUnsigned" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.001"/>
+  <testcase name="unknownMessagesAndUnsupportedFlagsAreNotCrcVerified" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="truncatedV2BaseAndPartialExtensionsAreZeroPadded" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.001"/>
+  <testcase name="current43ByteSysStatusAndLegacy31BytePayloadAreCompatible" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="txBytesMatchIndependentPymavlinkVectors" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.0"/>
+  <testcase name="maximum280BytePacketAndThousandsOfGarbageBytesStayBounded" classname="dev.drone.controller.mavlink.Mavlink2Test" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

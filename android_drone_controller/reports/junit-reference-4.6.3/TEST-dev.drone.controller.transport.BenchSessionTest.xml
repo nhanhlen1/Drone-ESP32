@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.transport.BenchSessionTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:46:44" hostname="017cdf9b75f1" time="6.709">
+  <properties/>
+  <testcase name="blockedOldBinderCannotReinstateEngineAfterDisconnectOrNewGeneration" classname="dev.drone.controller.transport.BenchSessionTest" time="0.109"/>
+  <testcase name="heartbeatLossAndDeadmanReleaseStopWithoutAutomaticResume" classname="dev.drone.controller.transport.BenchSessionTest" time="2.235"/>
+  <testcase name="revokeDuringPartiallyWrittenRcClosesConnectionRatherThanFinishingStaleFrame" classname="dev.drone.controller.transport.BenchSessionTest" time="0.426"/>
+  <testcase name="reconnectClearsCalibrationPhysicalAuthorizationAndOldRc" classname="dev.drone.controller.transport.BenchSessionTest" time="0.41"/>
+  <testcase name="unconfirmedConditionsAndUnknownHeartbeatNeverTransmitRc" classname="dev.drone.controller.transport.BenchSessionTest" time="0.681"/>
+  <testcase name="armedHeartbeatCrcAndBackgroundRevokeLease" classname="dev.drone.controller.transport.BenchSessionTest" time="1.218"/>
+  <testcase name="realTcpWriterHandlesZeroAndThreeByteWritesWithoutDuplicateOrCorruptedFrames" classname="dev.drone.controller.transport.BenchSessionTest" time="0.501"/>
+  <testcase name="missingRcStreamDoesNotDeadlockButAbsoluteBootstrapExpiresEvenWithFeedback" classname="dev.drone.controller.transport.BenchSessionTest" time="1.127"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

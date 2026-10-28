@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.transport.NetworkLeaseTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:46:51" hostname="017cdf9b75f1" time="0.001">
+  <properties/>
+  <testcase name="equalParcelInstanceRevokesTheBoundNetwork" classname="dev.drone.controller.transport.NetworkLeaseTest" time="0.001"/>
+  <testcase name="staleNetworkLossCannotRevokeAReplacementNetwork" classname="dev.drone.controller.transport.NetworkLeaseTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

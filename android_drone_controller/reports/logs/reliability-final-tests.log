@@ -1,0 +1,10 @@
+test_cli_replay_is_offline_and_preserves_existing_report (test_telemetry_reliability.ReliabilityTest.test_cli_replay_is_offline_and_preserves_existing_report) ... ok
+test_crc_fault_resynchronizes_without_accepting_invalid_arm (test_telemetry_reliability.ReliabilityTest.test_crc_fault_resynchronizes_without_accepting_invalid_arm) ... ok
+test_duplicates_reset_and_unknown_are_distinct (test_telemetry_reliability.ReliabilityTest.test_duplicates_reset_and_unknown_are_distinct) ... ok
+test_fragmentation_coalescing_gap_and_heartbeat_age (test_telemetry_reliability.ReliabilityTest.test_fragmentation_coalescing_gap_and_heartbeat_age) ... ok
+test_signed_frames_never_treated_as_trusted_heartbeat (test_telemetry_reliability.ReliabilityTest.test_signed_frames_never_treated_as_trusted_heartbeat) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.082s
+
+OK

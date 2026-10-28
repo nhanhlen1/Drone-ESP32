@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.ControllerViewModelTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:51:03" hostname="017cdf9b75f1" time="0.159">
+  <properties/>
+  <testcase name="missingPhysicalConditionCannotBeConvertedToBenchPermit" classname="dev.drone.controller.ControllerViewModelTest" time="0.109"/>
+  <testcase name="focusLossAndRegainDoNotRestoreControlOrThrottle" classname="dev.drone.controller.ControllerViewModelTest" time="0.022"/>
+  <testcase name="backgroundRevokesOutstandingPermitAndClosesLogicalLink" classname="dev.drone.controller.ControllerViewModelTest" time="0.002"/>
+  <testcase name="clearingViewModelStoreDisposesRuntimeAndCannotReconnect" classname="dev.drone.controller.ControllerViewModelTest" time="0.001"/>
+  <testcase name="criticalRcDiagnosticRequiresFourthConsentThroughViewModel" classname="dev.drone.controller.ControllerViewModelTest" time="0.021"/>
+  <testcase name="stopInvalidatesDeadmanAndOldPermitWithoutDisconnectingTelemetry" classname="dev.drone.controller.ControllerViewModelTest" time="0.001"/>
+  <testcase name="previewChangesNeverGenerateControlAuthority" classname="dev.drone.controller.ControllerViewModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

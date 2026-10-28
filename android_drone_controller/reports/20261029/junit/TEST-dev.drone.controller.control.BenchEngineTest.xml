@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.control.BenchEngineTest" tests="45" skipped="0" failures="0" errors="0" timestamp="2026-10-28T18:16:43" hostname="017cdf9b75f1" time="0.027">
+  <properties/>
+  <testcase name="enablingDoesNotStartTransmissionWithoutDeadman" classname="dev.drone.controller.control.BenchEngineTest" time="0.003"/>
+  <testcase name="missingInitialRcDoesNotCreateCircularGate" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="telemetryCarriesPerMessageAgeAndIsClearedOnReconnect" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="everyStateHasExplicitOutboundRightsAndNoneAllowsArm" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="secondAutopilotLocksConnectionUntilReconnect" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="additionalHealthFaultDuringCriticalLeaseRevokesBeforeNextWrite" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="sequenceGapCountsAllVerifiedTargetFramesEvenWithoutTelemetryDecoder" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="pendingPermitExpiresBeforeSocketWrite" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="deadmanExpiresAndDoesNotAutomaticallyResume" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="otherModesNeverGainTransmitRights" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="criticalDiagnosticFeedbackLatchNeverExtendsLifetimeOrOpensOtherChannels" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="zeroChannelCountAndRawZeroRemainObservableWithoutProvingApplied" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="ch1ExcursionUsesConfiguredTrimAndCannotCrossEndpoint" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="absoluteLeaseExpiresEvenWithContinuousMatchingFeedback" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="criticalDiagnosticRejectsExistingRcUntilNewIsolatedReceiverlessSession" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="parameterCacheIsSessionLocalAndBounded" classname="dev.drone.controller.control.BenchEngineTest" time="0.005"/>
+  <testcase name="invalidChannelCountStopsInsteadOfCreatingFeedback" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="repeatedEnableCannotRenewActiveLease" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="schedulerDoesNotCatchUpOrReplayOldPermits" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="armedAndUnknownAutopilotStatusStopImmediately" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="crcFaultRequiresNewHeartbeatAndConfirmation" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="sameSystemDifferentAutopilotComponentAlsoLocks" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="ch1OnlySmallExcursionNeverTouchesThrottleYawOrAuxiliary" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="narrowCriticalReceiverlessBenchNeedsFourthExplicitConsent" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="sticksAreOfflinePreviewAndCannotRaiseLiveThrottle" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="criticalDiagnosticRejectsMissingOrStaleSysStatusAndOtherSensorFaults" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="backgroundAndLostFocusRevokeConfirmationAndPermit" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="lateFramesAfterDisconnectCannotRepopulateTelemetryOrTarget" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="mode2MappingDeadzoneAndResetAreIndependentFromLiveBench" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="parameterCacheRetainsNamesUpdatesAndNeverAcceptsForeignSender" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="mutationOrForgedThrottleInvalidatesPermit" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="calibrationMustBeExplicitlyVerifiedEachConnection" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="changedInputInvalidatesPendingFrame" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="newCriticalTransitionCannotUsePreauthorisedHealthyLease" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="armFlagAndCriticalSystemHealthAreSeparateFacts" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="feedbackCannotBeReportedAsAcknowledgementOrAppliedProof" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="manualDisconnectAndObservedLinkLossHaveDistinctStates" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="nonfiniteInputAndBadCalibrationCannotReachWire" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="separatePhysicalAndOperatorConfirmationsAreMandatory" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="gcsAndNonArdupilotDoNotBecomeTargets" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="stopRevokesAlreadyPlannedFrameAndResetsThrottlePreview" classname="dev.drone.controller.control.BenchEngineTest" time="0.001"/>
+  <testcase name="bootEmergencyPoweroffAndUnknownHealthStayLockedEvenWithFourthConsent" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="staleHeartbeatStopsRegardlessOfSocketBeingConnected" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="noTelemetryOrUnknownArmCannotSend" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <testcase name="reconnectCannotRestoreOldThrottleInputOrAuthorisation" classname="dev.drone.controller.control.BenchEngineTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

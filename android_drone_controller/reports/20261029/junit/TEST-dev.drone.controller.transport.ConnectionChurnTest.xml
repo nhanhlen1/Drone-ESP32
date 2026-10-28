@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.transport.ConnectionChurnTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-28T18:17:11" hostname="017cdf9b75f1" time="0.235">
+  <properties/>
+  <testcase name="hundredConnectionsResetThrottleAndNeverInheritControlOrCalibration" classname="dev.drone.controller.transport.ConnectionChurnTest" time="0.235"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

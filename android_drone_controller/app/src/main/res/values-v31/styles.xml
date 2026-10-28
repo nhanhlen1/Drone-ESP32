@@ -1,0 +1,7 @@
+<resources>
+    <style name="DroneTheme" parent="DroneBaseTheme">
+        <item name="android:windowSplashScreenBackground">#09121E</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_drone</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#09121E</item>
+    </style>
+</resources>

@@ -1,0 +1,24 @@
+<resources><string name="app_name">ESP32 Drone Controller</string>
+    <string name="health_status">Sức khỏe FC: %1$s%2$s</string>
+    <string name="connection_status">TCP: %1$s\nHEARTBEAT: %2$s\nMAVLink: %3$s\nRC input đã nghiệm thu: Chưa xác minh\nQuyền ARM / bay: Đang khóa</string>
+    <string name="joystick_preview">Xem trước CH1–CH4: %1$s µs\nKhông phát từ joystick</string>
+    <string name="bench_state">Trạng thái: %1$s\nSức khỏe FC: %2$s\n%3$s</string>
+    <string name="bench_feedback">RC nhận: %1$s µs\nTX socket: %2$s override • phản hồi khớp: %3$s\nFC áp dụng / timeout: Chưa xác minh độc lập</string>
+    <string name="diagnostic_values">Trạng thái engine: %1$s\nTCP RX / TX: %2$s / %3$s byte\nGói RC được tạo: %4$s\nGói RC ghi đủ socket: %5$s\nNhịp TX trong 1 giây: %6$s Hz\nMAVLink frame hợp lệ: %7$s\nNhịp MAVLink trong 1 giây: %8$s bản tin/s\nMessage chưa hỗ trợ: %9$s\nĐộ trễ hai chiều: Chưa có phép đo\nCRC lỗi: %10$s\nLỗi parser / flags / chữ ký: %11$s\nSequence gaps: %12$s (không phải mất gói RF)\nRX byte gần nhất: %13$s\nTX byte gần nhất: %14$s\nHEARTBEAT: %15$s\nRC_CHANNELS: %16$s\nRC TX: %17$s\nRC RX: %18$s\nĐịnh danh xung đột: %19$s\nSức khỏe FC: %20$s\nChẩn đoán CRITICAL đủ điều kiện / đang chạy: %21$s / %22$s\nGCS: SYS255 / COMP190 • unsigned\nCRC không xác thực nguồn; cùng SYS/COMP không thể phân biệt chắc chắn.</string>
+    <string name="ch1_offset">CH1: lệch trim %1$s%2$s µs</string>
+    <string name="vehicle_identity">FC %1$s/%2$s • %3$s • HEARTBEAT %4$s</string>
+    <string name="firmware_version">Firmware: 0x%1$s • board %2$s • UID %3$s\nRevision: %4$s</string>
+    <string name="critical_diagnostic_active">ĐANG CHẨN ĐOÁN CRITICAL: chỉ CH1 hữu hạn, không chứng minh FC an toàn.</string>
+    <string name="critical_diagnostic_eligible">FC báo CRITICAL. Dữ liệu hiện tại phù hợp lỗi RC/prearm, nhưng nguyên nhân chưa được xác minh đầy đủ. Mặc định cấm phát; chỉ xét một phép chẩn đoán CH1 khi xác nhận riêng bên dưới và nguồn ESC đã ngắt vật lý.</string>
+    <string name="critical_diagnostic_blocked">FC báo CRITICAL: chưa đủ bằng chứng cho phép chẩn đoán CH1. Không cấp quyền; cần SYS_STATUS mới và không có lỗi cảm biến khác.</string>
+    <string name="channel_unverified">Chưa xác nhận trong phiên</string>
+    <string name="no_parameters">Chưa nhận tham số từ FC; không dùng mặc định làm bằng chứng</string>
+    <string name="no_events">Chưa có sự kiện</string>
+    <string name="health_critical_suffix">" • CÓ LỖI, KHÔNG PHẢI AN TOÀN"</string>
+    <string name="channel_verified">Đã xác nhận trong phiên • %1$s/%2$s/%3$s</string>
+    <string name="telemetry_requests">\n\nYêu cầu telemetry / tham số:\n%1$s\nACK gần nhất: %2$s\n\n%3$s</string>
+    <string name="arm_unknown">ARM chưa rõ</string>
+    <string name="arm_monitoring">ARMED • chỉ theo dõi</string>
+    <string name="protocol_counters">\n\nParser: %1$s byte; %2$s frame chưa có decoder; %3$s chữ ký từ chối; %4$s MAVLink1 bỏ qua; %5$s frame dở quá hạn; %6$s lần đồng bộ lại.\nKhoảng cách RC ghi socket p50/p95/p99: %7$s / %8$s / %9$s ms; jitter p95: %10$s ms.\nHEARTBEAT GCS đã ghi đủ: %11$s.\nSequence theo nguồn (không phải tỷ lệ mất gói RF):\n%12$s</string>
+    <string name="source_sequence">SYS%1$s / COMP%2$s: gap %3$s, trùng %4$s, đảo thứ tự %5$s</string>
+</resources>

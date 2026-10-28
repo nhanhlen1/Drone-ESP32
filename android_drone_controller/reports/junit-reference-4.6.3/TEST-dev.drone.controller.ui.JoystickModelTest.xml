@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.ui.JoystickModelTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:46:51" hostname="017cdf9b75f1" time="0.04">
+  <properties/>
+  <testcase name="nonFiniteInputCannotEnterPreview" classname="dev.drone.controller.ui.JoystickModelTest" time="0.001"/>
+  <testcase name="rollPitchYawReturnToCentre" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="newFingerDoesNotStealStick" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="deadzoneAndClamping" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="mode2AssignsAxesAndForwardPitchSign" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="twoThumbsRetainIndependentPointerIds" classname="dev.drone.controller.ui.JoystickModelTest" time="0.036"/>
+  <testcase name="throttleDoesNotJumpToTouchPosition" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="invalidTouchCannotPoisonThrottleSession" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="throttleHoldsOnReleaseButResetsForNewSession" classname="dev.drone.controller.ui.JoystickModelTest" time="0.0"/>
+  <testcase name="invalidDeadzoneRejected" classname="dev.drone.controller.ui.JoystickModelTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

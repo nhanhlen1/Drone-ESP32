@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.mavlink.ExtendedProtocolTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:51:19" hostname="017cdf9b75f1" time="0.011">
+  <properties/>
+  <testcase name="ackAndParameterDecodeReferenceFieldsWithoutImplyingRcAck" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.001"/>
+  <testcase name="positionPressureAndServoOffsetsAndUnitsMatchReference" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.0"/>
+  <testcase name="dialectMetadataMatchesIndependentReferenceMaxLengthsAndCrcExtras" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.0"/>
+  <testcase name="batterySentinelsVersionAndEkfDecodeIndependentVectors" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.0"/>
+  <testcase name="manualControlMatchesIndependentPymavlinkWireFrame" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.001"/>
+  <testcase name="invalidRequestsCannotBecomeArmMotorOrUnboundedStreams" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.002"/>
+  <testcase name="wrongCrcExtraIsRejectedEvenWhenPayloadAndHeaderAreIntact" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.0"/>
+  <testcase name="signedReferenceIsRejectedAcrossEverySplitAndFollowingFrameSurvives" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.001"/>
+  <testcase name="zeroLengthFrameCannotInventTelemetryAndParserRecovers" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.0"/>
+  <testcase name="everyExtendedFrameSurvivesAllFragmentBoundariesAndCoalescing" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.004"/>
+  <testcase name="readOnlyCommandAndParameterRequestsMatchIndependentVectors" classname="dev.drone.controller.mavlink.ExtendedProtocolTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

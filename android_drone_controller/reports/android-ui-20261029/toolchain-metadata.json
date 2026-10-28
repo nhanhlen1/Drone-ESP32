@@ -1,0 +1,32 @@
+{
+  "emulator": {
+    "Pkg.UserSrc": "false",
+    "Pkg.Revision": "37.2.12",
+    "Pkg.Path": "emulator",
+    "Pkg.Desc": "Android Emulator",
+    "Pkg.BuildId": "16428233"
+  },
+  "api35": {
+    "Pkg.Desc": "Android SDK System Image",
+    "Pkg.UserSrc": "false",
+    "Pkg.Revision": "2",
+    "Pkg.Dependencies": "emulator#29.1.11",
+    "AndroidVersion.ApiLevel": "35",
+    "AndroidVersion.ExtensionLevel": "13",
+    "AndroidVersion.IsBaseSdk": "true",
+    "SystemImage.Abi": "x86_64",
+    "SystemImage.GpuSupport": "true",
+    "SystemImage.TagId": "default",
+    "SystemImage.TagDisplay": "Default Android System Image"
+  },
+  "api26": {
+    "Pkg.Desc": "Android SDK System Image",
+    "Pkg.UserSrc": "false",
+    "Pkg.Revision": "1",
+    "AndroidVersion.ApiLevel": "26",
+    "SystemImage.Abi": "x86",
+    "SystemImage.GpuSupport": "true",
+    "SystemImage.TagId": "default",
+    "SystemImage.TagDisplay": "Default Android System Image"
+  }
+}

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.control.ControlAuthorityTest" tests="27" skipped="0" failures="0" errors="0" timestamp="2026-10-28T18:16:43" hostname="017cdf9b75f1" time="0.029">
+  <properties/>
+  <testcase name="benchExpiryIsAbsoluteDespiteRepeatedEchoAndInputRenewals" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.008"/>
+  <testcase name="heartbeatAndUnwrittenMatchingEchoNeverProveWrittenRc" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="wifiTcpHeartbeatParameterStagesFailClosedInOrder" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="configuredGcsIdRangeIsHandledWithoutRequiringHigh255" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="stopAndBackgroundDoNotSetMinimumThrottleOrDisarmFlightOnWire" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.002"/>
+  <testcase name="initialAndReadOnlyStatesCannotEmitRc" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="rejectedHighThrottleBeforeEnableCannotBeSilentlyTreatedAsMin" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="everyIndependentQualificationRecordIsRequired" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.003"/>
+  <testcase name="benchRequiresEveryPhysicalAndOperatorCondition" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="transitionLogIsBoundedAndHeartbeatCannotAutomaticallyGrantControl" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="modeSwitchCancelsAuthorityAndClearsThrottleAndEvidence" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="duplicateIdentityLocksUntilASeparateConnection" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="unexpectedArmedRevokesBenchAndRequestsOnlyBenchRelease" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="benchBootstrapDoesNotRequireInitialRcEcho" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="delayedEchoForAnOlderInputCannotVerifyTheCurrentRequestedValue" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="defaultProductionProviderNeverQualifiesFlight" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="heartbeatEchoHealthAndQualificationWatchdogsAreIndependent" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.002"/>
+  <testcase name="malformedAndFutureObservationsDoNotRefreshAuthority" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="fullyQualifiedFlightContinuesAcrossExpectedArmedTransition" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="deadmanAndInputWatchdogsStopStuckCommands" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="reconnectResetsThrottleEchoIdentityAndRejectsOldCallbacksAndQualification" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="flightRequiresFreshRealRcAndDoesNotUseSocketWriteAsEcho" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="flightCannotBeEnabledByQualificationAloneOrWhileAlreadyArmed" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="changingParametersRevokesAnActiveFlightAuthority" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="bench1470And1530UseOnlyCh1AndFreshEchoAfterWrite" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.0"/>
+  <testcase name="disarmObservedAfterFlightRevokesRatherThanAutomaticallyRearming" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.001"/>
+  <testcase name="parameterReadbackChecksSenderOverrideBitTimeoutCalibrationAndMapping" classname="dev.drone.controller.control.ControlAuthorityTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

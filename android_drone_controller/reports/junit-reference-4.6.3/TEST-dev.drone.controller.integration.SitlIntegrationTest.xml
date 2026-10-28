@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.integration.SitlIntegrationTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:46:28" hostname="017cdf9b75f1" time="15.608">
+  <properties/>
+  <testcase name="referenceEncoderBothMethodsMapAllAxesAndOverrideTimeoutReturnsToSimulatedReceiver" classname="dev.drone.controller.integration.SitlIntegrationTest" time="9.277"/>
+  <testcase name="realBenchSessionReceiverlessCh1ReachesArduPilotRadioInputAndStops" classname="dev.drone.controller.integration.SitlIntegrationTest" time="6.329"/>
+  <system-out><![CDATA[SITL direct Kotlin encoder: both RC methods CH1–4 observed; timeout returns receiver baseline=[1500, 1500, 1000, 1500]; no ARM
+SITL evidence directory: /workspace/Drone-ESP32/android_drone_controller/reports/sitl-reference/drone-sitl-14986169318108787899
+SITL receiverless real BenchSession: txOverrides=13 CH1 radio_in1520 observed; hardware NOT VERIFIED
+SITL evidence directory: /workspace/Drone-ESP32/android_drone_controller/reports/sitl-reference/drone-sitl-9817490712312270080
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

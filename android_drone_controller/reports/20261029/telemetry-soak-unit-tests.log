@@ -1,0 +1,9 @@
+test_capture_rejects_overflow_without_partial_extra_write (test_soak_telemetry.SoakTelemetryTest.test_capture_rejects_overflow_without_partial_extra_write) ... ok
+test_read_only_wire_guard_rejects_arm_rc_param_and_bad_interval (test_soak_telemetry.SoakTelemetryTest.test_read_only_wire_guard_rejects_arm_rc_param_and_bad_interval) ... ok
+test_sim_span_requires_same_source_and_resets_on_reboot_but_accepts_wrap (test_soak_telemetry.SoakTelemetryTest.test_sim_span_requires_same_source_and_resets_on_reboot_but_accepts_wrap) ... ok
+test_source_sequence_interleave_rollover_duplicates_and_reorder (test_soak_telemetry.SoakTelemetryTest.test_source_sequence_interleave_rollover_duplicates_and_reorder) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK

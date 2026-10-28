@@ -1,0 +1,32 @@
+{
+  "source": "https://raw.githubusercontent.com/ArduPilot/ardupilot/afeb9c49/",
+  "status": "Nguồn upstream theo revision đã cung cấp; chưa chứng minh giống binary/patch trên thiết bị",
+  "sha256": {
+    "GCS.cpp": "32f31ed8c188aac7708e52f1d9d3e3c69b080119409f20f5326f7a2f090cae9b",
+    "GCS_Common.cpp": "345233ce691a29f21e66d50b81ce75db9672eb29e9d39ac2d0e9e139e92836ec",
+    "GCS_MAVLink_Copter.cpp": "072b1a9634e30c2074692e2f3947bf1ad822634fdae74690eebf2bfa80e00f1a",
+    "RC_Channel.cpp": "98798a54813469e860c4443f94c1b79b8af706b6ac8322390a25e27ac17725b5",
+    "RC_Channel.h": "9d96714bcffd746524aafd071772e20652c7345691eae1abb1082efe3ad0ea7b",
+    "RC_Channels.cpp": "af860dea1b43d6f01739a622b93d3bf0ae9a82694b8d816e2d24fc9b63b9998b",
+    "WiFiDriver.cpp": "be27e4fec10e7d035980091e53460ab0a154bee950ee5ed78c18c2d60e93f0ed",
+    "WiFiDriver.h": "b0e7597089695f4b91015b6ac9057a77d0881d61deaa270d97d559030f21d8fc"
+  },
+  "full_revision": "afeb9c4941543d97f3e04fecf257b8f598f49a6a",
+  "checkout": "/workspace/tooling/ardupilot-target-sitl",
+  "sha256_by_path": {
+    "libraries/GCS_MAVLink/GCS_Common.cpp": "345233ce691a29f21e66d50b81ce75db9672eb29e9d39ac2d0e9e139e92836ec",
+    "libraries/GCS_MAVLink/GCS.cpp": "32f31ed8c188aac7708e52f1d9d3e3c69b080119409f20f5326f7a2f090cae9b",
+    "ArduCopter/GCS_MAVLink_Copter.cpp": "072b1a9634e30c2074692e2f3947bf1ad822634fdae74690eebf2bfa80e00f1a",
+    "libraries/RC_Channel/RC_Channel.cpp": "98798a54813469e860c4443f94c1b79b8af706b6ac8322390a25e27ac17725b5",
+    "libraries/RC_Channel/RC_Channels.cpp": "af860dea1b43d6f01739a622b93d3bf0ae9a82694b8d816e2d24fc9b63b9998b",
+    "libraries/RC_Channel/RC_Channel.h": "9d96714bcffd746524aafd071772e20652c7345691eae1abb1082efe3ad0ea7b",
+    "libraries/RC_Channel/RC_Channels_VarInfo.h": "b7891e797c216e1bd2c7d6d04031fe2d2c5e9cbe318d8a6579f5700a0231c17f",
+    "libraries/AP_HAL_ESP32/WiFiDriver.cpp": "be27e4fec10e7d035980091e53460ab0a154bee950ee5ed78c18c2d60e93f0ed",
+    "libraries/AP_HAL_ESP32/WiFiDriver.h": "b0e7597089695f4b91015b6ac9057a77d0881d61deaa270d97d559030f21d8fc",
+    "libraries/AP_HAL_ESP32/RCInput.cpp": "f51f10dbaab45ad5d468b2300f2df00954ad3dc3a87f6b0f8c09ed0d27d8761f",
+    "libraries/AP_HAL_ESP32/RCInput.h": "6d4dbdd53d043bf507c7da7134cb27f5dad9acc87157fe907465877debeb2868",
+    "libraries/AP_HAL_ESP32/HAL_ESP32_Class.cpp": "e0f58b5dcea83c34b020dcd10d113520826b3fb35a2505d42c6322f9f4cb8832",
+    "libraries/AP_SerialManager/AP_SerialManager.cpp": "d415cba6a95fd683e4f84c52925e05d87947efb08a817c5f0aed0d246d11be36"
+  },
+  "raw_fetch_matches_checkout": true
+}

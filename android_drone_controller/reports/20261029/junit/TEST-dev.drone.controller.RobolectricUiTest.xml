@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.RobolectricUiTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-28T18:16:38" hostname="017cdf9b75f1" time="5.081">
+  <properties/>
+  <testcase name="androidTouchCancelAndStopClearOfflineThrottleWithoutNetworkConnection" classname="dev.drone.controller.RobolectricUiTest" time="3.75"/>
+  <testcase name="lifecycleAndConfigurationChangeDoNotRestoreThrottleOrControlAuthority" classname="dev.drone.controller.RobolectricUiTest" time="0.72"/>
+  <testcase name="actualActivityStartsWithReadOnlyDisconnectedStateAndLockedArmButtons" classname="dev.drone.controller.RobolectricUiTest" time="0.316"/>
+  <testcase name="androidViewDispatchKeepsTwoPointerOwnersIndependentAndMapsAllFourChannels" classname="dev.drone.controller.RobolectricUiTest" time="0.295"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

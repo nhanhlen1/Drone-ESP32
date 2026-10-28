@@ -1,0 +1,38 @@
+{
+  "captured_date_client": "2026-10-29",
+  "identity": "Existing Codex candidate dev.drone.controller; NOT Google AI Studio source",
+  "files": {
+    "app/build/outputs/apk/debug/app-debug.apk": {
+      "bytes": 2412500,
+      "sha256": "d3917857b64283f1ac61b037b5d3d248cd66179c089a253fb9fbec0a5e6f684f"
+    },
+    "dist/ESP32_DRONE_ANDROID_APP.zip": {
+      "bytes": 3585615,
+      "sha256": "f17dfc3d102d8621038b2eae793d149d6db5171b714ccec29b19f991665dd143"
+    },
+    "dist/ESP32_DRONE_ANDROID_APP/android_drone_controller-source.zip": {
+      "bytes": 768495,
+      "sha256": "fe49685c443fbde6ce503c543c54fad78bce13625bbe3c3083e295364e8a015f"
+    },
+    "app/build.gradle.kts": {
+      "bytes": 1770,
+      "sha256": "23dc07c72587cc001736be4222ac3057fae32e2b80bee0c32754cd62499ff096"
+    },
+    "app/src/main/java/dev/drone/controller/mavlink/MavlinkCommon.kt": {
+      "bytes": 4088,
+      "sha256": "22f033e1091b49d16e58d4571acb008a98d5101a15ad845ec4fda4e8bd18c570"
+    },
+    "app/src/main/java/dev/drone/controller/mavlink/Mavlink2Parser.kt": {
+      "bytes": 5377,
+      "sha256": "0f224912a9e752a4e40de3a6f0d6d60ef82f46e94103550b61da71a6ba8d94e8"
+    },
+    "app/src/main/java/dev/drone/controller/control/BenchEngine.kt": {
+      "bytes": 21395,
+      "sha256": "c2346d067e7aa00800fb6189f7a79bc148496a961ac2cb447163c0d9b6317c89"
+    },
+    "app/src/main/java/dev/drone/controller/transport/BenchSession.kt": {
+      "bytes": 11577,
+      "sha256": "40b2ce6457697bf7cd7d2e647ca18bb438ce1b9d9125d06d654c5c5c8163eb26"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "duration_seconds": 4.962,
+  "statistics": {
+    "rx_bytes": 180,
+    "crc_valid_unsigned_frames": 8,
+    "garbage_bytes": 12
+  },
+  "messages": {
+    "0": 8
+  },
+  "heartbeat_age_seconds": {
+    "1:1": 0.0
+  },
+  "max_heartbeat_gap_seconds": 1.998,
+  "last_arm_observation": {
+    "1:1": "DISARMED"
+  },
+  "possible_reboot_observations": 0,
+  "interpretation": "Đo thụ động; sequence gap không đồng nghĩa packet loss Wi-Fi. CRC không xác thực nguồn. Không chứng minh RC/failsafe/động cơ hoạt động.",
+  "tx_bytes": 0,
+  "rc_commands_sent": 0,
+  "events": [],
+  "outcome": "OBSERVED"
+}

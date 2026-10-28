@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.mavlink.DialectParserPropertyTest" tests="21" skipped="0" failures="0" errors="0" timestamp="2026-10-28T18:17:04" hostname="017cdf9b75f1" time="0.054">
+  <properties/>
+  <testcase name="coalescedFramesCarryOrderDispositionWithoutDroppingDiagnosticDuplicates" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.001"/>
+  <testcase name="sequencesAreTrackedPerSystemAndComponentRatherThanGlobalStream" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="fragmentedStreamTagsExactlyAsCoalescedStreamAndExplicitResetMakesNewFirst" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="sequenceWrapIsNotLossAndInvalidCrcCannotAdvanceSequence" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="skippedUnknownDialectCanExplainASequenceGapSoItIsNotRadioLoss" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="fullPinnedDialectIncludesCommonArduPilotAndTransitiveVendorMessages" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.001"/>
+  <testcase name="sourceSequenceStorageIsBoundedUnderManySenderIdentities" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.002"/>
+  <testcase name="unsupportedFlagFrameCannotInjectHeadersFromSignatureOrPayload" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="feedAutomaticallyExpiresOldFragmentBeforeAcceptingNewBytes" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.002"/>
+  <testcase name="partialPacketTimeoutDropsOnlyStalledFragmentAndAllowsFollowingFrame" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.001"/>
+  <testcase name="manualFrameBuildersRemainCompatibleButParserAlwaysTagsFirst" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="frameOrderDispositionScopesMixedSourcesAndHandlesWrap" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.003"/>
+  <testcase name="duplicatesAndReorderNeverMoveHighWaterMarkBackwards" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="everyDefinedMessageAtItsMaximumLengthSurvivesRandomTcpFragments" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.008"/>
+  <testcase name="genuineCorruptArduPilotMessageCountsCrcButUnknownDialectNeverGuessesZeroExtra" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.002"/>
+  <testcase name="randomNoiseContainingMagicIsBoundedAndEventuallyResynchronizes" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.03"/>
+  <testcase name="knownDialectButUnsupportedTelemetryUsesCorrectCrcAndSeparateCounter" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.001"/>
+  <testcase name="backwardsSequenceAloneIsNotClassifiedAsVehicleReboot" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="userReported1470WireValueHasIndependentGoldenVectorWithoutClaimingHardwareTest" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.001"/>
+  <testcase name="connectionResetClearsSourceCountersAndDropsPartialPacket" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <testcase name="signedFramesConsumeSignatureAndDoNotUpdatePerSourceSequence" classname="dev.drone.controller.mavlink.DialectParserPropertyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

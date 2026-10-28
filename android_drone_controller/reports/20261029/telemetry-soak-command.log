@@ -1,0 +1,68 @@
+{
+  "status": "PASS",
+  "environment": "ArduPilot SITL upstream, localhost, accelerated simulation",
+  "hardware_wifi_30_minute_test": "NOT TESTED",
+  "rc_tx": 0,
+  "arm_commands_tx": 0,
+  "target_simulated_seconds": 1800,
+  "requested_speedup": 100,
+  "utc_started": "2026-10-28T18:06:42.651913+00:00",
+  "binary": "/workspace/tooling/ardupilot-target-sitl/build/sitl/bin/arducopter",
+  "binary_sha256": "41fd63749fa164c226a23ee395e683064553660f9b202581e94ba952ced6c9bf",
+  "command": [
+    "/workspace/tooling/ardupilot-target-sitl/build/sitl/bin/arducopter",
+    "--model",
+    "quad",
+    "--speedup",
+    "100",
+    "--instance",
+    "323",
+    "--serial0",
+    "tcp:58223",
+    "--serial1",
+    "none",
+    "--serial2",
+    "none",
+    "--defaults",
+    "/workspace/Drone-ESP32/android_drone_controller/reports/20261029/telemetry-soak/soak.parm",
+    "--home",
+    "-35.363261,149.165230,584,0"
+  ],
+  "endpoint": "127.0.0.1:58223",
+  "sitl_exit_after_own_termination": 0,
+  "wall_elapsed_seconds": 21.298329534001823,
+  "simulated_span_seconds": 1800.0,
+  "first_attitude_boot_ms": 5224,
+  "last_attitude_boot_ms": 1805224,
+  "effective_simulated_to_wall_ratio": 84.51367029167152,
+  "possible_reboots": 0,
+  "counts": {
+    "valid_unsigned_frames": 14667
+  },
+  "message_counts": {
+    "0": 1803,
+    "1": 1802,
+    "77": 4,
+    "253": 14,
+    "30": 9001,
+    "24": 1800,
+    "111": 180,
+    "49": 1,
+    "242": 1,
+    "22": 61
+  },
+  "per_source_message_counts": {
+    "42:1": 14667
+  },
+  "sequence": {
+    "gaps": 0
+  },
+  "maximum_heartbeat_gap_wall_seconds": 0.03232482599923969,
+  "rx_bytes": 576505,
+  "capture_sha256": "0c65b55c1322a10073f6b76240659aa8ed5585ac97aa7dd86248eea6eb0ecc05",
+  "tx_bytes": 37997,
+  "tx_message_counts": {
+    "0": 1801,
+    "76": 4
+  }
+}

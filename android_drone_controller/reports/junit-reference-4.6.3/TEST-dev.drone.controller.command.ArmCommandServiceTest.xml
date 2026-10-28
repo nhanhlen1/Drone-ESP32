@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.drone.controller.command.ArmCommandServiceTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-28T12:46:44" hostname="017cdf9b75f1" time="0.054">
+  <properties/>
+  <testcase name="productionDefaultsNeverOfferEvenWhenEvidenceAndConfirmationArePresent" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.003"/>
+  <testcase name="eachArmPrerequisiteBlocksBeforeCreatingAnIntent" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.013"/>
+  <testcase name="staleWrongSourceOrUnknownHeartbeatCannotConfirm" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.001"/>
+  <testcase name="ackAloneNeverConfirmsArmAndRequiresLaterMatchingHeartbeat" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <testcase name="semanticIntentIsNotSocketOrFcEvidence" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <testcase name="concurrentIntentsAreRejectedAndNoAutomaticRetryExists" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <testcase name="missingSinkAndSinkExceptionAreFailuresWithoutAckOrConfirmation" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.035"/>
+  <testcase name="progressNeverExtendsAbsoluteTimeoutAndLateAckCannotRevive" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.001"/>
+  <testcase name="lostLinkAndExplicitCancelNeverReplayOrClaimRetraction" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <testcase name="observedStateWithoutAckCannotBeAttributedToAppCommand" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.001"/>
+  <testcase name="ackCorrelationRejectsWrongSourceCommandOrGcsDestination" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <testcase name="deniedUnsupportedFailedCancelledAndUnknownResponsesAreTerminal" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <testcase name="disarmRequiresIndependentApprovalConfirmationFreshHeartbeatAndGroundEvidence" classname="dev.drone.controller.command.ArmCommandServiceTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

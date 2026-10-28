@@ -1,0 +1,21 @@
+{
+  "upstream": "https://github.com/mavlink/mavlink",
+  "commit": "e03dad40efb3a4009ad6d78de5e55997139ac2f3",
+  "root_dialect": "ardupilotmega.xml",
+  "wire_version": "2.0",
+  "generator": "pymavlink",
+  "generator_version": "2.4.49",
+  "message_count": 301,
+  "generator_mavparse_sha256": "51a8e249149c217a08695a7ff40ccb7b8489f23a9987da4d898abc7d8a24b937",
+  "xml_sha256": {
+    "ardupilotmega.xml": "8cff0bf2ae5bec60d16118bf37e1ec6e9f55f54aecc486df0b18f89977479047",
+    "common.xml": "492351648eabb5ec9f61064eacf57d4b256887a8ebec8a0bca57572b539ad26b",
+    "csAirLink.xml": "f5b5ba62d0b65953438981ca95fc45dceb98d63601dfc0705ad91184227ee24d",
+    "cubepilot.xml": "b4f76d660b41b16746f67fa8e17321ea6b65448791045154105f29b3a70ce7b9",
+    "icarous.xml": "e40ec11a6d76b48eb815c101c96b1849c76a8ba5302a01d39f1941ff9c501bbb",
+    "loweheiser.xml": "31f20f01d436f2fbaaaf86f4a51c60cc01bc42722ae4c5ad403afeaaaa512deb",
+    "minimal.xml": "d4c7c7346432814348bb858cbab8cee7a17b23e37937c1574e2018148cbfb785",
+    "standard.xml": "fd57e0f3e767821310ba51384faeb6d7a6141f279cecfffe6c7c14b9385569ca",
+    "uAvionix.xml": "bd9adf101205744270be9b5fc7205d1c73e365a619435fffc2623958069da516"
+  }
+}

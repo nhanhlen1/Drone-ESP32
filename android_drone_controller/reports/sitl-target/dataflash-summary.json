@@ -1,0 +1,122 @@
+[
+  {
+    "file": "android_drone_controller/reports/sitl-target/drone-sitl-13598343337752412024/logs/00000001.BIN",
+    "rcin_records": 72,
+    "observed_ch1_to_ch4": [
+      [
+        1500,
+        1500,
+        1000,
+        1500
+      ],
+      [
+        1540,
+        1460,
+        1140,
+        1540
+      ]
+    ],
+    "rcin_transitions": [
+      {
+        "time_us": 2549813,
+        "channels": [
+          1500,
+          1500,
+          1000,
+          1500
+        ]
+      },
+      {
+        "time_us": 5449486,
+        "channels": [
+          1540,
+          1460,
+          1140,
+          1540
+        ]
+      },
+      {
+        "time_us": 7049679,
+        "channels": [
+          1500,
+          1500,
+          1000,
+          1500
+        ]
+      },
+      {
+        "time_us": 8449119,
+        "channels": [
+          1540,
+          1460,
+          1140,
+          1540
+        ]
+      }
+    ],
+    "error_transitions": [
+      {
+        "mavpackettype": "ERR",
+        "TimeUS": 2549813,
+        "Subsys": 3,
+        "ECode": 0
+      }
+    ],
+    "arm_records": [],
+    "interpretation": "DataFlash của process SITL tham chiếu, không phải log ESP32 thật. RCIN là RC input do firmware ghi; không chứng minh đầu ra motor hoặc bay."
+  },
+  {
+    "file": "android_drone_controller/reports/sitl-target/drone-sitl-1936385829263801761/logs/00000001.BIN",
+    "rcin_records": 17,
+    "observed_ch1_to_ch4": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1520,
+        0,
+        0,
+        0
+      ]
+    ],
+    "rcin_transitions": [
+      {
+        "time_us": 4392409,
+        "channels": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "time_us": 5092129,
+        "channels": [
+          1520,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "error_transitions": [
+      {
+        "mavpackettype": "ERR",
+        "TimeUS": 4392409,
+        "Subsys": 3,
+        "ECode": 0
+      },
+      {
+        "mavpackettype": "ERR",
+        "TimeUS": 5169598,
+        "Subsys": 5,
+        "ECode": 1
+      }
+    ],
+    "arm_records": [],
+    "interpretation": "DataFlash của process SITL tham chiếu, không phải log ESP32 thật. RCIN là RC input do firmware ghi; không chứng minh đầu ra motor hoặc bay."
+  }
+]

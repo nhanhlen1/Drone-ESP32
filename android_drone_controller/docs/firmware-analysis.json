@@ -1,0 +1,319 @@
+{
+  "checksums": [
+    {
+      "manifest": "SHA256SUMS",
+      "name": "BUILD_INFO.json",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "COMPASS_ORIENTATION_REPORT.md",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "README.md",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "ardupilot.bin",
+      "expected": "f5b725ba347bda4c9a9701b79503e53cacdac2a4bcf05ddab515d3293d047db3",
+      "actual": "f5b725ba347bda4c9a9701b79503e53cacdac2a4bcf05ddab515d3293d047db3",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "ardupilot.elf",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "ardupilot.map",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "bootloader.bin",
+      "expected": "6915b7b85111eeb192af88194a83ca2cd39af346c706d976712698736cd66704",
+      "actual": "6915b7b85111eeb192af88194a83ca2cd39af346c706d976712698736cd66704",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "compass-orientation.patch",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "defaults.parm",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "flasher_args.json",
+      "expected": "ba8b379c4af278a892f8dc5a7cf88e51120e2a125b4b7200e3a45b3a5bec3733",
+      "actual": "ba8b379c4af278a892f8dc5a7cf88e51120e2a125b4b7200e3a45b3a5bec3733",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "hwdef.dat",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "hwdef.h",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "partition-table.bin",
+      "expected": "82f10134bb73cf1c49ea8fd8ed5d0b1be40c402fb641a9a44eeaadb55c0aa92e",
+      "actual": "82f10134bb73cf1c49ea8fd8ed5d0b1be40c402fb641a9a44eeaadb55c0aa92e",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "partitions.csv",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "partitions.json",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "sdkconfig",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS",
+      "name": "test_compass_orientation.py",
+      "status": "NOT_PROVIDED"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "README_FLASH.txt",
+      "expected": "b5505ef1ef7fd8f01d7ce4b62aa69b42625780a96a7c16888b1136439212b43f",
+      "actual": "b5505ef1ef7fd8f01d7ce4b62aa69b42625780a96a7c16888b1136439212b43f",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "SHA256SUMS",
+      "expected": "714e8b8bd8e6317e4985d6f6622de25ee66d94f35c5864d5f127b994b9cdd932",
+      "actual": "714e8b8bd8e6317e4985d6f6622de25ee66d94f35c5864d5f127b994b9cdd932",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "ardupilot.bin",
+      "expected": "f5b725ba347bda4c9a9701b79503e53cacdac2a4bcf05ddab515d3293d047db3",
+      "actual": "f5b725ba347bda4c9a9701b79503e53cacdac2a4bcf05ddab515d3293d047db3",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "bootloader.bin",
+      "expected": "6915b7b85111eeb192af88194a83ca2cd39af346c706d976712698736cd66704",
+      "actual": "6915b7b85111eeb192af88194a83ca2cd39af346c706d976712698736cd66704",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "flasher_args.json",
+      "expected": "ba8b379c4af278a892f8dc5a7cf88e51120e2a125b4b7200e3a45b3a5bec3733",
+      "actual": "ba8b379c4af278a892f8dc5a7cf88e51120e2a125b4b7200e3a45b3a5bec3733",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "merged-flash.bin",
+      "expected": "541976dbdc383e64edf3c562a3beeda9967498e318090fee4b64e56fd600908f",
+      "actual": "541976dbdc383e64edf3c562a3beeda9967498e318090fee4b64e56fd600908f",
+      "status": "MATCH"
+    },
+    {
+      "manifest": "SHA256SUMS_DESKTOP.txt",
+      "name": "partition-table.bin",
+      "expected": "82f10134bb73cf1c49ea8fd8ed5d0b1be40c402fb641a9a44eeaadb55c0aa92e",
+      "actual": "82f10134bb73cf1c49ea8fd8ed5d0b1be40c402fb641a9a44eeaadb55c0aa92e",
+      "status": "MATCH"
+    }
+  ],
+  "images": {
+    "bootloader.bin": {
+      "size": 24000,
+      "sha256": "6915b7b85111eeb192af88194a83ca2cd39af346c706d976712698736cd66704",
+      "magic": "0xe9",
+      "segments": [
+        {
+          "load_address": "0x3fff0030",
+          "size": 5476
+        },
+        {
+          "load_address": "0x40078000",
+          "size": 15036
+        },
+        {
+          "load_address": "0x40080400",
+          "size": 4
+        },
+        {
+          "load_address": "0x40080404",
+          "size": 3388
+        }
+      ],
+      "spi_mode": 2,
+      "flash_freq_size_byte": "0x2f",
+      "entry": "0x400805a8",
+      "chip_id": 0,
+      "hash_appended": 1,
+      "checksum_offset": "0x5d9f",
+      "checksum_match": true,
+      "appended_sha256_match": true
+    },
+    "ardupilot.bin": {
+      "size": 1905328,
+      "sha256": "f5b725ba347bda4c9a9701b79503e53cacdac2a4bcf05ddab515d3293d047db3",
+      "magic": "0xe9",
+      "segments": [
+        {
+          "load_address": "0x3f400020",
+          "size": 294556
+        },
+        {
+          "load_address": "0x3ffb0000",
+          "size": 18712
+        },
+        {
+          "load_address": "0x40080000",
+          "size": 14388
+        },
+        {
+          "load_address": "0x400d0020",
+          "size": 1485108
+        },
+        {
+          "load_address": "0x40083834",
+          "size": 92460
+        }
+      ],
+      "spi_mode": 2,
+      "flash_freq_size_byte": "0x2f",
+      "entry": "0x40083654",
+      "chip_id": 0,
+      "hash_appended": 1,
+      "checksum_offset": "0x1d128f",
+      "checksum_match": true,
+      "appended_sha256_match": true,
+      "app_descriptor": {
+        "magic": "0xabcd5432",
+        "secure_version": 0,
+        "version": "",
+        "project_name": "",
+        "build_time": "",
+        "build_date": "",
+        "idf_version": "v5.3.1-1-gcc3203dc4f0",
+        "elf_sha256": "64216782a408f864607d773748016a544db2afb02afbe77b69f83c8a901361ec"
+      },
+      "known_string_presence": {
+        "ArduCopter V4.8.0-dev": true,
+        "afeb9c49": true,
+        "ESP32_DRONE": true,
+        "MAV_GCS_SYSID": true,
+        "RC_OVERRIDE_TIME": false,
+        "RC_OPTIONS": false,
+        "INA219": false,
+        "AK09916": true
+      },
+      "version_strings": [
+        "ArduCopter V4.8.0-dev (afeb9c49)",
+        "ArduCopter V4.8.0-dev"
+      ]
+    }
+  },
+  "partition_md5_match": true,
+  "partitions": [
+    {
+      "magic": "0x50aa",
+      "type": "0x1",
+      "subtype": "0x2",
+      "offset": "0x9000",
+      "size": "0x6000",
+      "end_exclusive": "0xf000",
+      "label": "nvs",
+      "flags": 0
+    },
+    {
+      "magic": "0x50aa",
+      "type": "0x1",
+      "subtype": "0x1",
+      "offset": "0xf000",
+      "size": "0x1000",
+      "end_exclusive": "0x10000",
+      "label": "phy_init",
+      "flags": 0
+    },
+    {
+      "magic": "0x50aa",
+      "type": "0x0",
+      "subtype": "0x0",
+      "offset": "0x10000",
+      "size": "0x300000",
+      "end_exclusive": "0x310000",
+      "label": "factory",
+      "flags": 0
+    },
+    {
+      "magic": "0x50aa",
+      "type": "0x45",
+      "subtype": "0x0",
+      "offset": "0x310000",
+      "size": "0x40000",
+      "end_exclusive": "0x350000",
+      "label": "storage",
+      "flags": 0
+    }
+  ],
+  "merged": {
+    "size": 1970864,
+    "sha256": "541976dbdc383e64edf3c562a3beeda9967498e318090fee4b64e56fd600908f",
+    "comparisons": [
+      {
+        "offset": "0x1000",
+        "name": "bootloader.bin",
+        "exact_match": true
+      },
+      {
+        "offset": "0x10000",
+        "name": "ardupilot.bin",
+        "exact_match": true
+      },
+      {
+        "offset": "0x8000",
+        "name": "partition-table.bin",
+        "exact_match": true
+      }
+    ],
+    "gaps": [
+      {
+        "start": "0x0",
+        "end_exclusive": "0x1000",
+        "all_ff": true
+      },
+      {
+        "start": "0x6dc0",
+        "end_exclusive": "0x8000",
+        "all_ff": true
+      },
+      {
+        "start": "0x8c00",
+        "end_exclusive": "0x10000",
+        "all_ff": true
+      }
+    ]
+  }
+}
