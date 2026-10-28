@@ -7,19 +7,19 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: rc-bench-v0.1.0-test
+  group: rc-bench-v0.1.1-test
   cancel-in-progress: false
 jobs:
   publish:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      RELEASE_TAG: rc-bench-v0.1.0-test
+      RELEASE_TAG: rc-bench-v0.1.1-test
     steps:
       - name: Check out tested native project
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: rc-bench-v0.1.0-test
+          ref: rc-bench-v0.1.1-test
           persist-credentials: false
       - name: Use installed JDK and Android SDK
         shell: bash
@@ -43,7 +43,7 @@ jobs:
               if any(int(root.attrib[k]) for k in ('failures','errors','skipped')):
                   raise RuntimeError('Failed or skipped tests: '+str(path))
               total+=int(root.attrib['tests'])
-          if total!=47: raise RuntimeError(f'Expected 47 tests, got {total}')
+          if total!=49: raise RuntimeError(f'Expected 49 tests, got {total}')
           print(f'Confirmed {total} tests passed; no failures/skips')
           PY
       - name: Package APK and Android Studio source
@@ -51,7 +51,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/rc-bench-assets"
-          cp android_rc_bench/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/rc-bench-assets/ESP32-RC-Bench-v0.1.0-debug.apk"
+          cp android_rc_bench/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/rc-bench-assets/ESP32-RC-Bench-v0.1.1-debug.apk"
           git archive --format=zip --prefix=ESP32-RC-Bench/ --output="$RUNNER_TEMP/rc-bench-assets/ESP32-RC-Bench-AndroidStudio-source.zip" "$RELEASE_TAG:android_rc_bench"
           cd "$RUNNER_TEMP/rc-bench-assets"
           sha256sum *.apk *.zip > SHA256SUMS.txt
@@ -68,13 +68,13 @@ jobs:
 
           Giới hạn CH4 ở ±25% span mỗi phía trim (mặc định 1400–1600µs) vì ARMING_RUDDER chưa được xác minh. Trước thử phải tháo cánh và ngắt nguồn ESC. Chỉ biết trạng thái từ HEARTBEAT mới nhất, không thay thế inhibit phía firmware. RC_CHANNELS.chancount=0 hợp lệ với ArduPilot receiverless; PWM có thể còn cache sau timeout, không phải ACK hay bằng chứng override còn hoạt động.
 
-          47 unit/loopback tests passed, lint0errors/2nonfatalwarnings, debugAPK built. Không thử điện thoại/ESP32/MissionPlanner thực trong cloud. README trong ZIP hướng dẫn Android Studio/Windows, hiệu chỉnh kênh và nghiệm thu timeout0.5s phía ArduPilot. Bản debug chưa đủ điều kiện bay.
+          49 unit/loopback tests passed, lint0errors/2nonfatalwarnings, debugAPK built. Không thử điện thoại/ESP32/MissionPlanner thực trong cloud. README trong ZIP hướng dẫn Android Studio/Windows, hiệu chỉnh kênh và nghiệm thu timeout0.5s phía ArduPilot. Bản debug chưa đủ điều kiện bay.
           NOTES
           if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --title 'RC Bench v0.1.0 — Kotlin MAVLink2 DISARMED' --notes-file "$RUNNER_TEMP/rc-bench-notes.md"
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --title 'RC Bench v0.1.1 — Kotlin MAVLink2 DISARMED' --notes-file "$RUNNER_TEMP/rc-bench-notes.md"
           fi
           root="$RUNNER_TEMP/rc-bench-assets"
-          gh release upload "$RELEASE_TAG" "$root/ESP32-RC-Bench-v0.1.0-debug.apk" "$root/ESP32-RC-Bench-AndroidStudio-source.zip" "$root/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
+          gh release upload "$RELEASE_TAG" "$root/ESP32-RC-Bench-v0.1.1-debug.apk" "$root/ESP32-RC-Bench-AndroidStudio-source.zip" "$root/SHA256SUMS.txt" --repo "$GITHUB_REPOSITORY"
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > "$RUNNER_TEMP/rc-bench-release.json"
           python3 - <<'PY'
           import pathlib,os,json,hashlib
