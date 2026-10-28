@@ -1,0 +1,7 @@
+/workspace/tooling/android-validation/apks/final-20261029/app-debug.apk: 1 file pushed, 0 skipped. 3105.8 MB/s (2488589 bytes in 0.001s)
+Performing Push Install
+Success
+/workspace/tooling/android-validation/apks/final-20261029/app-debug-androidTest.apk: 1 file pushed, 0 skipped. 2152.5 MB/s (390261 bytes in 0.000s)
+Performing Push Install
+Success
+Success

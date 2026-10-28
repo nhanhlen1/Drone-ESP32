@@ -1,0 +1,7 @@
+Starting: Intent { cmp=dev.drone.controller/.MainActivity }
+Status: ok
+Activity: dev.drone.controller/.MainActivity
+ThisTime: 5621
+TotalTime: 5621
+WaitTime: 5728
+Complete

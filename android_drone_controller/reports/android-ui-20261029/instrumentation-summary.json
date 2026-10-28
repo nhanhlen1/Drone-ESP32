@@ -1,0 +1,51 @@
+{
+  "scope": "Existing dev.drone.controller candidate, not missing Google AI Studio source/APK",
+  "platform": "Android emulator API26 x86; software TCG; no /dev/kvm",
+  "instrumentation": {
+    "executed": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "runner_code": -1,
+    "seconds": 43.229,
+    "cases": [
+      {
+        "class": "dev.drone.controller.ControllerActivityTest",
+        "test": "stoppedActivityHasNoControlAuthority",
+        "status": "PASS"
+      },
+      {
+        "class": "dev.drone.controller.ControllerActivityTest",
+        "test": "manifestHasOnlyNetworkPermissions",
+        "status": "PASS"
+      },
+      {
+        "class": "dev.drone.controller.ControllerActivityTest",
+        "test": "activityRecreationDoesNotConnectOrGrantRc",
+        "status": "PASS"
+      },
+      {
+        "class": "dev.drone.controller.ControllerInteractionTest",
+        "test": "gestureCancellationAndStopClearThrottleAndAuthority",
+        "status": "PASS"
+      },
+      {
+        "class": "dev.drone.controller.ControllerInteractionTest",
+        "test": "simultaneousIndependentPointersMapMode2AndReleaseAxesWithoutTransmitting",
+        "status": "PASS"
+      },
+      {
+        "class": "dev.drone.controller.ControllerInteractionTest",
+        "test": "orientationChangeDoesNotRestoreThrottleOrGrantNetworkControl",
+        "status": "PASS"
+      }
+    ]
+  },
+  "apk_sha256": {
+    "app-debug.apk": "20bde5c9d3e1793d5c53f0eb4b6a22fdfb3b9fb39b04ff635da8585b5308974f",
+    "app-debug-androidTest.apk": "ae140a73643da85c3ed6db0d1fd2b232ac0c3f81d5a78c9f9f4de2c7b7ea6d05"
+  },
+  "visual_review": "PARTIAL: manual screenshot has Android System UI ANR overlay after tests; preserved unmodified",
+  "hardware_rc": "NOT TESTED",
+  "flight_ready": "NOT VERIFIED"
+}

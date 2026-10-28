@@ -22,7 +22,8 @@ Các kết quả sau thuộc **candidate Codex `dev.drone.controller`, version0.
 | Python | **9testPASS**, gồm4soak+5recorder | logs/python-tests.log |
 | Lint | **0error,1warningViewConstructor** đã phân loại, không suppress | lint-results-debug.xml/.txt |
 | APKdebug+APKtest | BuildPASS; chữ kýdebugv2verifyPASS | logs/apk-verification.txt; artifacthash |
-| AndroidAPI26emulator | **6/6instrumentationPASS**,0failed/skipped; actualMotionEvent/rotation/lifecycle | ANDROID_UI_20261029.md; android-api26/ và loginstrumentation |
+| AndroidAPI26emulator | **6/6instrumentationPASS**,0failed/skipped; actualMotionEvent/rotation/lifecycle | [báo cáoAndroid](../ANDROID_UI_20261029.md); ../android-ui-20261029/ và loginstrumentation |
+| VisualreviewAPI26 | PARTIAL/BLOCKED: sauinstrumentation xuất hiệnSystemUIANR; ảnh giữ nguyên overlay, không coi là ảnh app khỏe | ../android-ui-20261029/system-ui-anr.png |
 | AndroidAPI35emulator | Frameworkboot/package services bất ổn trước cài APK; không coi là appcrash | Báo cáoAndroid và log35; không tính PASS |
 
 182 là số testcase JVM trong một lượt, bao gồm4Robolectric và3SITL; không cộng các số con lần nữa. Sáu instrumentation và9Python được báo riêng. Test timing30phútvirtual và soak1800giâyFC-time không tương đương30phútAndroid/Wi-Fi thời gian thật.

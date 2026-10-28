@@ -1,0 +1,6 @@
+/workspace/tooling/android-validation/apks/baseline-app-debug.apk: 1 file pushed, 0 skipped. 666.5 MB/s (2412500 bytes in 0.003s)
+Performing Push Install
+Success
+/workspace/tooling/android-validation/apks/baseline-app-debug-androidTest.apk: 1 file pushed, 0 skipped. 1878.7 MB/s (380217 bytes in 0.000s)
+Performing Push Install
+Success
