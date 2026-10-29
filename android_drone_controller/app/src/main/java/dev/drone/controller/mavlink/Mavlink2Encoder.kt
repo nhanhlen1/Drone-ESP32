@@ -1,7 +1,8 @@
 package dev.drone.controller.mavlink
 
-/** BENCH ONLY. Outbound commands are restricted to telemetry reads and bench RC.
- * No generic COMMAND_LONG/arm/disarm/mode/actuator encoder is exposed.
+/** Narrow MAVLink wire encoder. Authority, foreground and confirmation gates live
+ * in the session; creating bytes never grants permission to transmit them.
+ * There is deliberately no arbitrary COMMAND_LONG or parameter-write API.
  * Connection lifecycle owns this object; create a new instance on reconnect.
  */
 class Mavlink2Encoder(
@@ -46,6 +47,22 @@ class Mavlink2Encoder(
         return telemetryCommand(targetSystem, targetComponent, 512, messageId.toFloat(), 0f)
     }
 
+    /** Explicit ARM/DISARM only: param2 stays zero. No force-arm or force-disarm
+     * escape value is available through this API. FC arming checks remain active.
+     * A completed TCP write does not imply ACK or a changed HEARTBEAT state.
+     */
+    fun armDisarm(targetSystem: Int, targetComponent: Int, armed: Boolean): ByteArray =
+        controlCommand(targetSystem, targetComponent, 400, if (armed) 1f else 0f, 0f)
+
+    /** ArduCopter custom mode, requested through COMMAND_LONG for an explicit ACK.
+     * CUSTOM_MODE_ENABLED=1; higher layers validate the vehicle and offered modes.
+     * Mode success additionally requires a later HEARTBEAT reporting this mode.
+     */
+    fun flightMode(targetSystem: Int, targetComponent: Int, customMode: Int): ByteArray {
+        require(customMode in 0..255)
+        return controlCommand(targetSystem, targetComponent, 176, 1f, customMode.toFloat())
+    }
+
     /** Exact name read only: never PARAM_SET, never change a vehicle setting. */
     fun parameterRead(targetSystem: Int, targetComponent: Int, name: String): ByteArray {
         require(targetSystem in 1..255 && targetComponent in 1..255)
@@ -77,8 +94,18 @@ class Mavlink2Encoder(
         return encode(76,p)
     }
 
+    private fun controlCommand(targetSystem: Int,targetComponent: Int,command: Int,param1: Float,param2: Float): ByteArray {
+        require(targetSystem in 1..254 && targetComponent in 1..255)
+        check(command==400 || command==176)
+        val p=ByteArray(33)
+        p.putF32(0,param1);p.putF32(4,param2);p.putU16(28,command)
+        p[30]=targetSystem.toByte();p[31]=targetComponent.toByte()
+        // Confirmation and parameters 3..7 are zero; no automatic retry marker.
+        return encode(76,p)
+    }
+
     companion object {
-        val READABLE_MESSAGES=setOf(0,1,22,24,29,30,33,36,65,147,148,193,253)
+        val READABLE_MESSAGES=setOf(0,1,22,24,29,30,33,36,65,147,148,193,245,253)
     }
 
     private fun encode(messageId: Int, payload: ByteArray): ByteArray {

@@ -5,7 +5,7 @@ data class AuthorityIdentity(val systemId:Int,val componentId:Int) {
     fun valid()=systemId in 1..254 && componentId in 1..255
 }
 
-enum class AuthorityMode { READ_ONLY, BENCH, FLIGHT_CANDIDATE }
+enum class AuthorityMode { READ_ONLY, BENCH, FLIGHT_CANDIDATE, BENCH_4CH, OPERATOR_CONTROL }
 enum class AuthorityStage {
     DISCONNECTED, WIFI_BOUND, TCP_CONNECTED, FC_HEARTBEAT_VERIFIED, TELEMETRY_READY,
     BENCH_READY, BENCH_TX_ACTIVE, RC_ECHO_VERIFIED, FLIGHT_CANDIDATE_READY,
@@ -68,8 +68,8 @@ data class AuthorityDecision(
     val stopEffect:AuthorityStopEffect,val transitions:List<String>,
 )
 
-/** Provisional, reusable domain boundary, not a replacement Google AI Studio app.
- * It has no socket/encoder/ARM access and is not wired into the APK's live path.
+/** Control boundary used by the live TCP scheduler.
+ * It has no socket/encoder/ARM access.
  * A single latest-only scheduler must recheck both epochs and canTransmit before
  * each write. Its production qualification provider denies flight by default.
  * Bench and flight authority are intentionally separate: an unexpected ARMED
@@ -105,6 +105,9 @@ class ControlAuthority(
     private var observedRc:List<Int>?=null
     private var echoAt:Long?=null
     private var enabled=false
+    private var groundTestConsent=false
+    private var rcOnlyCritical=false
+    private var rcOnlyCriticalAt:Long?=null
     private var everEnabled=false
     private var enabledAt:Long?=null
     private var firstWriteAt:Long?=null
@@ -134,11 +137,12 @@ class ControlAuthority(
     private fun revoke(next:AuthorityStage,message:String) {
         stopEffect=if(enabled&&mode==AuthorityMode.BENCH&&firstWriteAt!=null)AuthorityStopEffect.RELEASE_BENCH_CHANNELS else AuthorityStopEffect.STOP_RC_TRANSMISSION
         enabled=false;authorityEpoch++;enabledAt=null;firstWriteAt=null;deadmanAt=null;inputAt=null
-        requested=neutral();correlated=false;written.clear();transition(next,message)
+        requested=neutral();correlated=false;written.clear();groundTestConsent=false;transition(next,message)
     }
 
     /** The caller must already have bound the selected Wi-Fi Network. */
     @Synchronized fun beginConnection(wifiBound:Boolean):Long {
+        rcOnlyCritical=false;rcOnlyCriticalAt=null
         epoch++;wifi=wifiBound;connected=false;target=null;heartbeatAt=null;armed=null;health=SystemHealth.UNKNOWN
         parameters=null;observedRc=null;echoAt=null;duplicateIdentity=false;inputRejected=false;everEnabled=false
         revoke(if(wifiBound)AuthorityStage.WIFI_BOUND else AuthorityStage.LOCKED,
@@ -150,6 +154,7 @@ class ControlAuthority(
         connected=true;transition(AuthorityStage.TCP_CONNECTED,"TCP đã kết nối; chưa xác minh FC");return true
     }
     @Synchronized fun disconnect(message:String="Mất liên kết; không tự nối lại quyền điều khiển") {
+        rcOnlyCritical=false;rcOnlyCriticalAt=null
         epoch++;connected=false;wifi=false;target=null;heartbeatAt=null;armed=null;parameters=null;observedRc=null;echoAt=null
         revoke(AuthorityStage.LINK_LOST,message)
     }
@@ -169,10 +174,10 @@ class ControlAuthority(
         val previouslyArmed=armed
         target=identity;heartbeatAt=receivedAtMs;armed=isArmed;health=systemHealth
         if(previouslyArmed!=null&&previouslyArmed!=isArmed){correlated=false;written.clear()}
-        if(enabled && mode==AuthorityMode.BENCH && isArmed) {
+        if(enabled && mode in setOf(AuthorityMode.BENCH,AuthorityMode.BENCH_4CH) && isArmed) {
             revoke(AuthorityStage.LOCKED,"FC chuyển ARMED trong RC Bench; đã thu hồi quyền bench");return
         }
-        if(enabled && mode==AuthorityMode.FLIGHT_CANDIDATE && previouslyArmed==true && !isArmed) {
+        if(enabled && mode in setOf(AuthorityMode.FLIGHT_CANDIDATE,AuthorityMode.OPERATOR_CONTROL) && previouslyArmed==true && !isArmed) {
             revoke(AuthorityStage.LOCKED,"FC đã DISARMED; không tự khôi phục quyền flight");return
         }
         if(!enabled&&!everEnabled)transition(AuthorityStage.FC_HEARTBEAT_VERIFIED,"Đã xác minh HEARTBEAT; chưa cấp quyền điều khiển")
@@ -202,7 +207,7 @@ class ControlAuthority(
         if(!foreground)return "Ứng dụng không ở foreground/có focus"
         if(duplicateIdentity)return "Định danh FC mơ hồ"
         if(target==null||!fresh(heartbeatAt,HEARTBEAT_FRESH_MS)||armed==null)return "HEARTBEAT quá hạn hoặc chưa có FC hợp lệ"
-        if(health !in setOf(SystemHealth.STANDBY,SystemHealth.ACTIVE))return "Sức khỏe FC $health; giữ khóa quyền này"
+        if(health !in setOf(SystemHealth.STANDBY,SystemHealth.ACTIVE) && !(groundTestConsent && mode==AuthorityMode.BENCH_4CH && armed==false && health==SystemHealth.CRITICAL && rcOnlyCritical && fresh(rcOnlyCriticalAt,1500L)))return "Sức khỏe FC $health; giữ khóa quyền này"
         val p=parameters ?:return "Chưa đọc thông số RC trong phiên này"
         if(p.connectionEpoch!=epoch||p.identity!=target||!p.usable(gcsSystem))return "Thông số SYSID/RC_OPTIONS/timeout/calibration/mapping chưa phù hợp"
         return null
@@ -215,7 +220,7 @@ class ControlAuthority(
         val c=parameters?.channels ?:return false
         if(values.size!=4 || c.size!=4 || values.indices.any{values[it] !in c[it].minimum..c[it].maximum})return false
         if(mode==AuthorityMode.BENCH) return kotlin.math.abs(values[0]-c[0].trim)<=BENCH_CH1_EXCURSION_US && (1..3).all{values[it]==if(it==2)c[it].minimum else c[it].trim}
-        if(mode==AuthorityMode.FLIGHT_CANDIDATE && armed==false && values[2]!=c[2].minimum)return false
+        if(mode in setOf(AuthorityMode.FLIGHT_CANDIDATE,AuthorityMode.OPERATOR_CONTROL) && armed==false && values[2]!=c[2].minimum)return false
         return true
     }
     private fun qualificationValid():Boolean {
@@ -256,6 +261,28 @@ class ControlAuthority(
         authorityEpoch++;enabled=true;everEnabled=true;enabledAt=clock.nowMs();inputAt=clock.nowMs();requested=neutral();stopEffect=AuthorityStopEffect.STOP_RC_TRANSMISSION
         transition(AuthorityStage.FLIGHT_CANDIDATE_READY,"Đã cấp quyền có điều kiện; không tự ARM, chờ thao tác người vận hành");return true
     }
+    /** Explicit propeller-off commissioning session; this is not a hardware or
+     * flight qualification record. Original strict enableFlight remains separate.
+     * Four-channel bench additionally requires isolated ESC power and never ARMs.
+     */
+    @Synchronized fun enableOperatorSession(propsRemoved:Boolean,escPowerIsolated:Boolean,operatorConfirmed:Boolean):Boolean {
+        tick()
+        if(enabled)return false
+        groundTestConsent=propsRemoved&&operatorConfirmed&&(mode!=AuthorityMode.BENCH_4CH||escPowerIsolated)
+        val blocker=when {
+            mode !in setOf(AuthorityMode.BENCH_4CH,AuthorityMode.OPERATOR_CONTROL)->"Chưa chọn kiểm thử bốn kênh hoặc điều khiển"
+            !groundTestConsent->"Cần tháo cánh, xác nhận phiên; RC Bench phải cách ly nguồn ESC"
+            else->startBlocker()
+        }
+        if(blocker!=null){revoke(AuthorityStage.LOCKED,blocker);return false}
+        authorityEpoch++;enabled=true;everEnabled=true;enabledAt=clock.nowMs();inputAt=clock.nowMs();requested=neutral()
+        stopEffect=AuthorityStopEffect.STOP_RC_TRANSMISSION
+        transition(AuthorityStage.FLIGHT_CANDIDATE_READY,"Phiên kiểm thử tháo cánh; chưa kiểm định phần cứng/bay; chưa tự ARM")
+        return true
+    }
+    /** Fresh SYS_STATUS may narrowly identify the receiverless bootstrap pattern.
+     * It never permits ARM and cannot bypass other health/failsafe checks. */
+    @Synchronized fun receiverlessCriticalPattern(eligible:Boolean,receivedAtMs:Long=clock.nowMs()){rcOnlyCritical=eligible;rcOnlyCriticalAt=receivedAtMs.takeIf{it<=clock.nowMs()}}
     @Synchronized fun input(channels:List<Int>,receivedAtMs:Long=clock.nowMs()) {
         if(receivedAtMs>clock.nowMs() || inputAt!=null&&receivedAtMs<inputAt!!)return
         if(!inputValid(channels)) {
@@ -285,14 +312,14 @@ class ControlAuthority(
         commonBlocker()?.let{revoke(if(!fresh(heartbeatAt,HEARTBEAT_FRESH_MS))AuthorityStage.LINK_LOST else AuthorityStage.FAILSAFE,it);return}
         if(deadmanAt!=null&&!fresh(deadmanAt,DEADMAN_FRESH_MS)){revoke(AuthorityStage.LOCKED,"Deadman quá hạn; không phát gói cũ");return}
         if((deadmanAt!=null||firstWriteAt!=null)&&!fresh(inputAt,INPUT_FRESH_MS)){revoke(AuthorityStage.LOCKED,"Đầu vào điều khiển quá hạn; không phát lại giá trị cũ");return}
-        if(mode==AuthorityMode.BENCH) {
+        if(mode in setOf(AuthorityMode.BENCH,AuthorityMode.BENCH_4CH)) {
             if(armed!=false){revoke(AuthorityStage.LOCKED,"ARMED không được phát RC Bench");return}
-            if(firstWriteAt!=null&&clock.nowMs()-firstWriteAt!!>=BENCH_LEASE_MS){revoke(AuthorityStage.LOCKED,"Đã hết hạn CH1 Bench; cần xác nhận riêng mới");return}
+            if(firstWriteAt!=null&&clock.nowMs()-firstWriteAt!!>=if(mode==AuthorityMode.BENCH)BENCH_LEASE_MS else 5000L){revoke(AuthorityStage.LOCKED,if(mode==AuthorityMode.BENCH)"Đã hết hạn CH1 Bench; cần xác nhận riêng mới"else "Đã hết phép thử bốn kênh 5 giây; cần xác nhận mới");return}
             if(firstWriteAt==null&&clock.nowMs()-(enabledAt?:clock.nowMs())>=BENCH_START_WINDOW_MS){revoke(AuthorityStage.LOCKED,"Quá hạn bắt đầu phép thử bench");return}
         }
-        if(mode==AuthorityMode.FLIGHT_CANDIDATE) {
-            if(!qualificationValid()){revoke(AuthorityStage.LOCKED,"Hồ sơ kiểm định bị thu hồi/hết hạn; không tự cấp lại");return}
-            if(!fresh(echoAt,RC_ECHO_FRESH_MS)){revoke(AuthorityStage.FAILSAFE,"Phản hồi RC quá hạn; kết quả điều khiển chưa được xác minh");return}
+        if(mode in setOf(AuthorityMode.FLIGHT_CANDIDATE,AuthorityMode.OPERATOR_CONTROL)) {
+            if(mode==AuthorityMode.FLIGHT_CANDIDATE&&!qualificationValid()){revoke(AuthorityStage.LOCKED,"Hồ sơ kiểm định bị thu hồi/hết hạn; không tự cấp lại");return}
+            if(!fresh(echoAt,RC_ECHO_FRESH_MS) && !(mode==AuthorityMode.OPERATOR_CONTROL && armed==false && clock.nowMs()-(firstWriteAt?:enabledAt?:clock.nowMs())<RC_ECHO_FRESH_MS)){revoke(AuthorityStage.FAILSAFE,"Phản hồi RC quá hạn; kết quả điều khiển chưa được xác minh");return}
         }
     }
     @Synchronized fun decision():AuthorityDecision {
@@ -300,8 +327,8 @@ class ControlAuthority(
         val transmit=enabled&&fresh(deadmanAt,DEADMAN_FRESH_MS)&&fresh(inputAt,INPUT_FRESH_MS)&&commonBlocker()==null&&inputValid(requested)
         if(transmit) {
             val activeStage=when {
-            mode==AuthorityMode.BENCH&&correlated->AuthorityStage.RC_ECHO_VERIFIED
-            mode==AuthorityMode.BENCH->AuthorityStage.BENCH_TX_ACTIVE
+            mode in setOf(AuthorityMode.BENCH,AuthorityMode.BENCH_4CH)&&correlated->AuthorityStage.RC_ECHO_VERIFIED
+            mode in setOf(AuthorityMode.BENCH,AuthorityMode.BENCH_4CH)->AuthorityStage.BENCH_TX_ACTIVE
             armed==true->AuthorityStage.ARMED_CONTROL_CANDIDATE
             else->AuthorityStage.FLIGHT_CANDIDATE_READY
             }

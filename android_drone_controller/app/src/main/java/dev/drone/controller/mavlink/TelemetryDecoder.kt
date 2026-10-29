@@ -26,7 +26,16 @@ sealed class Telemetry {
         val sensorsPresentExtended: Long = 0,
         val sensorsEnabledExtended: Long = 0,
         val sensorsHealthyExtended: Long = 0,
-    ) : Telemetry()
+    ) : Telemetry() {
+        /** The FC's reported arming-check state, never a substitute for the
+         * COMMAND_ACK returned by the FC when an operator requests ARM. */
+        val preArmCheckPresent: Boolean get() = sensorsPresent and PREARM_CHECK_BIT != 0L
+        val preArmCheckEnabled: Boolean get() = sensorsEnabled and PREARM_CHECK_BIT != 0L
+        val preArmCheckHealthy: Boolean get() = sensorsHealthy and PREARM_CHECK_BIT != 0L
+        val unhealthyEnabledSensors: Long get() = sensorsEnabled and sensorsHealthy.inv() and 0xffffffffL
+        val unhealthyEnabledSensorsExtended: Long get() = sensorsEnabledExtended and sensorsHealthyExtended.inv() and 0xffffffffL
+        companion object { const val PREARM_CHECK_BIT: Long = 1L shl 28 }
+    }
 
     data class Attitude(
         val timeBootMs: Long,
@@ -74,7 +83,22 @@ sealed class Telemetry {
     data class AutopilotVersion(val flightSoftwareVersion:Long,val boardVersion:Long,val capabilities:Long,
         val uid:Long,val flightCustomVersion:ByteArray):Telemetry()
     data class EkfStatus(val flags:Int,val velocityVariance:Float,val horizontalVariance:Float,
-        val verticalVariance:Float,val compassVariance:Float,val terrainVariance:Float):Telemetry()
+        val verticalVariance:Float,val compassVariance:Float,val terrainVariance:Float):Telemetry() {
+        val attitudeValid: Boolean get() = flags and 1 != 0
+        val horizontalVelocityValid: Boolean get() = flags and 2 != 0
+        val verticalVelocityValid: Boolean get() = flags and 4 != 0
+        val horizontalRelativePositionValid: Boolean get() = flags and 8 != 0
+        val horizontalAbsolutePositionValid: Boolean get() = flags and 16 != 0
+        val verticalAbsolutePositionValid: Boolean get() = flags and 32 != 0
+        val constantPositionMode: Boolean get() = flags and 128 != 0
+        val uninitialized: Boolean get() = flags and 1024 != 0
+    }
+    /** Landed state is FC-reported evidence: 0 unknown, 1 on ground, 2 in air,
+     * 3 taking off, 4 landing. A missing/default zero is not on-ground evidence. */
+    data class ExtendedSysState(val vtolState:Int,val landedState:Int):Telemetry() {
+        val onGround: Boolean get() = landedState == 1
+        val inAir: Boolean get() = landedState == 2
+    }
 
     data class StatusText(
         val severity: Int,
@@ -132,6 +156,7 @@ object TelemetryDecoder {
                 val values=FloatArray(5){p.f32(it*4)}
                 if(values.any{!it.isFinite()}) null else Telemetry.EkfStatus(p.u16(20),values[0],values[1],values[2],values[3],values[4])
             }
+            245 -> Telemetry.ExtendedSysState(p.u8(0),p.u8(1))
             253 -> {
                 var end = 1
                 while (end < 51 && p[end] != 0.toByte()) end++

@@ -7,8 +7,9 @@ import dev.drone.controller.mavlink.*
 internal class TelemetryRequests {
     private val streams = linkedMapOf(65 to 200_000,1 to 1_000_000,30 to 200_000,
         24 to 1_000_000,33 to 500_000,29 to 1_000_000,147 to 1_000_000,
-        36 to 1_000_000,193 to 1_000_000,148 to 5_000_000)
-    private val parameters=listOf("MAV_GCS_SYSID","MAV_GCS_SYSID_HI","MAV_OPTIONS",
+        36 to 1_000_000,193 to 1_000_000,245 to 500_000,148 to 5_000_000)
+    private val parameters=listOf("MAV_GCS_SYSID","MAV_GCS_SYSID_HI","SYSID_MYGCS","MAV_OPTIONS",
+        "RCMAP_ROLL","RCMAP_PITCH","RCMAP_THROTTLE","RCMAP_YAW",
         "RC_OPTIONS","RC_OVERRIDE_TIME","ARMING_RUDDER","FLTMODE_CH",
         "FS_THR_ENABLE","FS_GCS_ENABLE","FS_GCS_TIMEOUT","RC_FS_TIMEOUT") +
         (1..4).flatMap { listOf("RC${it}_MIN","RC${it}_TRIM","RC${it}_MAX","RC${it}_REVERSED") }
@@ -44,6 +45,7 @@ internal class TelemetryRequests {
         }
         return null
     }
+    @Synchronized fun refreshParameters(){parameterIndex=0;nextAt=0;awaitingAckUntil=null}
     @Synchronized fun summary():List<String> = streams.keys.map {
         "Message $it: "+ when { it in observed->"đã quan sát bản tin";it in requested->"đã tạo yêu cầu; chưa thấy bản tin";else->"chưa yêu cầu" }
     }

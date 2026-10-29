@@ -11,7 +11,7 @@ class SessionLoggerTest {
         val folder=Files.createTempDirectory("bounded-rc-log").toFile()
         val note=java.io.File(folder,"operator-notes.txt").apply{writeText("keep")}
         repeat(4){java.io.File(folder,"rcbench-123-$it.csv").writeText("old")}
-        val logger=SessionLogger(folder,maximumFileBytes=512,retainedFiles=2,wallClockMs={777})
+        val logger=SessionLogger(folder,maximumFileBytes=2048,retainedFiles=2,wallClockMs={777})
         val snapshot=SessionSnapshot(BenchEngine(MonotonicClock{123L}).snapshot(),"TEST",null,null,0,0,0,0.0,0,0)
         repeat(10){logger.record(snapshot,123)}
         val deadline=System.nanoTime()+2_000_000_000
@@ -20,7 +20,7 @@ class SessionLoggerTest {
         assertTrue(logger.sizeLimitReached)
         assertTrue(logger.dropped.get()>0)
         assertNotNull(logger.error)
-        assertTrue(logger.file.length()<=512)
+        assertTrue(logger.file.length()<=2048)
         assertEquals("keep",note.readText())
         assertTrue(folder.listFiles()!!.count{it.extension=="csv"}<=2)
         val csv=logger.file.readText()

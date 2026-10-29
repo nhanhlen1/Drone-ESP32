@@ -6,8 +6,8 @@ android {
         applicationId = "dev.drone.controller"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.1-protocol"
+        versionCode = 3
+        versionName = "0.3.0-rc-control"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

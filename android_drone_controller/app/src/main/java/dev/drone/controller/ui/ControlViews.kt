@@ -22,13 +22,14 @@ internal object Palette {
     val red=Color.rgb(255,123,130)
 }
 
-/** Independent Android pointer capture; values are offline until a separate gate exists. */
+/** Independent Android pointer capture; transmission requires the separate session gate. */
 class StickView @JvmOverloads constructor(context:Context,private val throttleStick:Boolean=false):View(context) {
     val model=JoystickModel(throttleStick)
     var onValue:((StickValue)->Unit)?=null
+    var onCancel:(()->Unit)?=null
     private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
     private fun dp(n:Int)=(n*resources.displayMetrics.density).toInt()
-    init {isClickable=true;minimumHeight=dp(180);contentDescription=if(throttleStick)"Cần trái: ga giữ vị trí và hướng quay, mô phỏng ngoại tuyến" else "Cần phải: lăn và chúi, mô phỏng ngoại tuyến"}
+    init {isClickable=true;minimumHeight=dp(180);contentDescription=if(throttleStick)"Cần trái: ga giữ vị trí và hướng quay, Mode 2" else "Cần phải: lăn và chúi, Mode 2"}
     fun reset(){model.reset();parent?.requestDisallowInterceptTouchEvent(false);invalidate()}
     private fun publish(){onValue?.invoke(model.value);invalidate()}
     override fun onTouchEvent(event:MotionEvent):Boolean {
@@ -41,7 +42,7 @@ class StickView @JvmOverloads constructor(context:Context,private val throttleSt
             MotionEvent.ACTION_MOVE->{val i=model.pointer?.let(event::findPointerIndex)?:-1;if(i>=0){model.move(event.getPointerId(i),px(i),py(i));publish()}}
             MotionEvent.ACTION_POINTER_UP->{model.end(event.getPointerId(event.actionIndex));publish()}
             MotionEvent.ACTION_UP->{model.end(event.getPointerId(event.actionIndex));parent?.requestDisallowInterceptTouchEvent(false);publish();performClick()}
-            MotionEvent.ACTION_CANCEL->{model.reset();parent?.requestDisallowInterceptTouchEvent(false);publish()}
+            MotionEvent.ACTION_CANCEL->{model.reset();parent?.requestDisallowInterceptTouchEvent(false);onCancel?.invoke();publish()}
         }
         return true
     }

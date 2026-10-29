@@ -163,6 +163,6 @@ class Mavlink2Parser(
         if(used==0)partialStartedAt=null
     }
     companion object {
-        private val TYPED_TELEMETRY_IDS=setOf(0,1,22,24,29,30,33,36,65,77,147,148,193,253)
+        private val TYPED_TELEMETRY_IDS=setOf(0,1,22,24,29,30,33,36,65,77,147,148,193,245,253)
     }
 }

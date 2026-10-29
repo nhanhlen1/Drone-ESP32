@@ -13,6 +13,8 @@ import dev.drone.controller.control.ArmState
 import dev.drone.controller.control.SystemHealth
 import dev.drone.controller.mavlink.Telemetry
 import dev.drone.controller.transport.SessionSnapshot
+import dev.drone.controller.transport.ControlProfile
+import dev.drone.controller.control.AuthorityStage
 import java.util.Locale
 
 interface UiActions {
@@ -23,6 +25,11 @@ interface UiActions {
     fun preview(input:Mode2Input)
     fun configure(channel:Int,min:Int,max:Int,trim:Int,verified:Boolean)
     fun startBench(props:Boolean,esc:Boolean,authorised:Boolean,criticalRcDiagnosticAuthorised:Boolean=false)
+    fun refreshControlReadback() {}
+    fun selectControlMode(profile:ControlProfile) {}
+    fun startControl(propsRemoved:Boolean,escIsolated:Boolean,authorised:Boolean):Boolean=false
+    fun requestArm(desired:Boolean,confirmed:Boolean) {}
+    fun requestFlightMode(mode:Int,confirmed:Boolean) {}
     fun testValue(value:Float)
     fun openWifi()
     fun export()
@@ -31,6 +38,10 @@ interface UiActions {
 
 /** Native views; per-view pointer splitting keeps two thumb inputs independent. */
 class ControllerScreen(private val activity:Activity,private val actions:UiActions):LinearLayout(activity) {
+    private val compactLandscape=resources.configuration.orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    private lateinit var heading:LinearLayout
+    private lateinit var footerHint:TextView
+    private val liveDetail=label("Chưa có quyền điều khiển",12,Palette.amber)
     private val pages=FrameLayout(activity)
     private val nav=LinearLayout(activity)
     private val navButtons=mutableListOf<Button>()
@@ -38,16 +49,16 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
     private val identity=label("Chưa nhận trạng thái flight controller",11,Palette.muted)
     private val healthWarning=label("Sức khỏe FC: chưa có dữ liệu",11,Palette.amber)
     private val safety=label("ĐANG KHÓA • Chưa có quyền phát RC",12,Palette.amber)
-    private val host=input("192.168.4.1",false)
-    private val port=input("5760",true)
+    private val host=input("192.168.4.1",false).apply{id=R.id.connect_host}
+    private val port=input("5760",true).apply{id=R.id.connect_port}
     private val connection=label("",13)
     private val telemetry=label("Chưa có dữ liệu",14)
     private val diagnostics=label("Chưa có dữ liệu",12)
     private val parameterText=label("Chưa nhận tham số từ FC",12,Palette.muted)
     private val firmwareText=label("Chưa nhận phiên bản firmware",12,Palette.muted)
     private val events=label(tr(R.string.no_events),11,Palette.muted)
-    private val stickLeft=StickView(activity,true)
-    private val stickRight=StickView(activity,false)
+    private val stickLeft=StickView(activity,true).apply{id=R.id.left_stick}
+    private val stickRight=StickView(activity,false).apply{id=R.id.right_stick}
     private val preview=label("CH1 1500 • CH2 1500 • CH3 1100 • CH4 1500 µs",12,Palette.mint)
     private val benchState=label("Chưa xác nhận điều kiện kiểm thử",13,Palette.amber)
     private val benchFeedback=label("Chưa phát gói thử; chưa có bằng chứng áp dụng RC",12,Palette.muted)
@@ -60,6 +71,25 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
     private val armBench=button("CHO PHÉP MỘT PHÉP THỬ CH1")
     private val testSlider=SeekBar(activity)
     private val testLabel=label("CH1: tại trim (+0 µs)",12)
+    private val hud=AttitudeHudView(activity)
+    private val liveState=label("CHỈ ĐỌC • Chưa cấp quyền điều khiển bốn kênh",12,Palette.amber)
+    private val liveEvidence=label("RC TX: chưa có • RC phản hồi: chưa có",11,Palette.muted)
+    private val controlProfile=Spinner(activity).apply{id=R.id.control_profile}
+    private val controlProps=check("Tôi đã tháo toàn bộ cánh quạt").apply{id=R.id.control_props}
+    private val controlEsc=check("Tôi đã ngắt vật lý nguồn ESC (bắt buộc ở thử RC DISARMED)").apply{id=R.id.control_esc}
+    private val controlConsent=check("Tôi chủ động nhận quyền điều khiển phiên này; đã kiểm tra FC và cơ chế dừng độc lập").apply{id=R.id.control_consent}
+    private val enableControl=button("BẬT ĐIỀU KHIỂN 4 KÊNH").apply{id=R.id.control_enable}
+    private val armConfirm=check("Xác nhận ARM một lần: cánh đã tháo, ga thấp nhất, không có người trong vùng động lực").apply{id=R.id.arm_confirm}
+    private val disarmConfirm=check("Xác nhận DISARM một lần: đã ở trên mặt đất").apply{id=R.id.disarm_confirm}
+    private val armButton=button("ARM ĐANG KHÓA",Palette.amber).apply{id=R.id.arm_button;isEnabled=false}
+    private val disarmButton=button("DISARM ĐANG KHÓA",Palette.amber).apply{id=R.id.disarm_button;isEnabled=false}
+    private val commandState=label("Chưa có yêu cầu ARM/DISARM",11,Palette.muted)
+    private val modeSelect=Spinner(activity).apply{id=R.id.mode_selector}
+    private val modeConfirm=check("Tôi xác nhận yêu cầu đổi chế độ một lần").apply{id=R.id.mode_confirm}
+    private val modeApply=button("GỬI YÊU CẦU CHẾ ĐỘ").apply{id=R.id.mode_apply}
+    private val modeState=label("Chế độ do FC xác nhận qua HEARTBEAT",11,Palette.muted)
+    private val modeChoices=listOf(0 to "Ổn định / STABILIZE",2 to "Giữ cao / ALT_HOLD",5 to "Giữ vị trí / LOITER",16 to "POSHOLD",6 to "Về nhà / RTL",9 to "Hạ cánh / LAND")
+    private var lastLiveEnabled=false
     private var disposed=false
     private var lastEnabled=false
     private var activePage=0
@@ -69,9 +99,11 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
     init {
         orientation=VERTICAL;setBackgroundColor(Palette.background)
         isMotionEventSplittingEnabled=true
-        addView(label("ESP32 / DRONE",21,Palette.mint).apply{typeface=Typeface.DEFAULT_BOLD})
-        addView(label("BỘ ĐIỀU KHIỂN • 0.2.1 • KIỂM THỬ TRÊN BÀN",10,Palette.muted))
-        addView(status,full(8));addView(identity);addView(healthWarning);addView(safety,full(7))
+        heading=row()
+        heading.addView(label("ESP32 / DRONE",18,Palette.mint).apply{typeface=Typeface.DEFAULT_BOLD},weight())
+        heading.addView(label("MODE 2 • 0.3.0 • CHƯA KIỂM ĐỊNH BAY",9,Palette.muted))
+        addView(heading)
+        addView(status,full(3));addView(identity);addView(healthWarning);addView(safety,full(3))
         nav.orientation=HORIZONTAL
         val navScroll=HorizontalScrollView(activity).apply{isHorizontalScrollBarEnabled=false;addView(nav)}
         addView(navScroll,full(8))
@@ -83,7 +115,7 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         val content=listOf(connectionPage(),controllerPage(),telemetryPage(),benchPage(),configPage(),diagnosticsPage(),helpPage())
         content.forEach{body->pages.addView(ScrollView(activity).apply{isFillViewport=true;addView(body)})}
         addView(button("DỪNG PHÁT ĐIỀU KHIỂN",Palette.red).apply{setOnClickListener{actions.stop("Người dùng bấm DỪNG");resetInputs()}},full(8))
-        addView(label("STOP thu hồi quyền phát của app; dừng động lực cần cơ chế độc lập Wi-Fi.",10,Palette.muted))
+        footerHint=label("STOP thu hồi quyền phát của app; dừng động lực cần cơ chế độc lập Wi-Fi.",10,Palette.muted);addView(footerHint)
         show(0,false)
     }
     private fun dp(n:Int)=(n*resources.displayMetrics.density).toInt()
@@ -117,26 +149,70 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         card(page,"02 / TCP → MAVLINK 2").apply {
             val fields=row();fields.addView(host,LayoutParams(0,dp(52),2f));fields.addView(port,LayoutParams(0,dp(52),1f));addView(fields)
             val controls=row()
-            controls.addView(button("KẾT NỐI").apply{setOnClickListener{val p=port.text.toString().toIntOrNull();if(p==null||p !in 1..65535)Toast.makeText(activity,"Cổng phải từ 1 đến 65535",Toast.LENGTH_LONG).show() else{resetInputs();actions.connect(host.text.toString().trim(),p)}}},weight())
+            controls.addView(button("KẾT NỐI").apply{id=R.id.connect_button;setOnClickListener{val p=port.text.toString().toIntOrNull();if(p==null||p !in 1..65535)Toast.makeText(activity,"Cổng phải từ 1 đến 65535",Toast.LENGTH_LONG).show() else{resetInputs();actions.connect(host.text.toString().trim(),p)}}},weight())
             controls.addView(button("NGẮT",Palette.amber).apply{setOnClickListener{actions.disconnect();resetInputs()}},weight());addView(controls,full(8));addView(connection,full(12));addView(firmwareText,full(8))
         }
         card(page,"MỨC XÁC MINH").addView(label("Wi-Fi → TCP → HEARTBEAT hợp lệ → telemetry. Mỗi bước có bằng chứng riêng. TCP kết nối không có nghĩa RC đã được flight controller nhận hoặc áp dụng.",13),full(8))
     }
     private fun controllerPage()=column().also{page->
-        card(page,"TAY CẦN MODE 2 • XEM TRƯỚC NGOẠI TUYẾN").apply {
-            addView(label("Đường điều khiển bay đang khóa. Hai cần dưới đây chỉ xem mapping; không phát RC. Phép thử CH1 nằm riêng ở tab KIỂM TRA RC.",12,Palette.amber),full(8))
-            val titles=row();titles.addView(label("TRÁI / GA · YAW",11,Palette.muted),weight());titles.addView(label("PHẢI / PITCH · ROLL",11,Palette.muted),weight());addView(titles,full(14))
+        card(page,"MODE 2 / ĐIỀU KHIỂN BỐN KÊNH").apply {
+            if(compactLandscape){liveState.maxLines=1;liveState.textSize=11f;liveEvidence.maxLines=2;liveEvidence.textSize=10f}
+            addView(liveState,full(5))
+            val titles=row();titles.addView(label("TRÁI / GA · YAW",10,Palette.muted),weight());titles.addView(label("HUD / DỮ LIỆU FC",10,Palette.muted),weight());titles.addView(label("PHẢI / PITCH · ROLL",10,Palette.muted),weight());addView(titles,full(5))
             val sticks=row();sticks.isMotionEventSplittingEnabled=true
-            sticks.addView(stickLeft,LayoutParams(0,dp(190),1f));sticks.addView(stickRight,LayoutParams(0,dp(190),1f));addView(sticks,full(4))
+            val compact=resources.configuration.orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            sticks.addView(stickLeft,LayoutParams(0,dp(if(compact)140 else 190),1f))
+            sticks.addView(hud,LayoutParams(0,dp(if(compact)110 else 150),.8f).apply{marginStart=dp(5);marginEnd=dp(5)})
+            sticks.addView(stickRight,LayoutParams(0,dp(if(compact)140 else 190),1f));addView(sticks,full(2))
             fun update(){actions.preview(Mode2Mapping.from(stickLeft.model.value,stickRight.model.value))}
             stickLeft.onValue={update()};stickRight.onValue={update()}
-            addView(preview,full(8))
-            addView(label("Ga thay đổi tương đối từ điểm chạm, giữ vị trí khi nhấc tay. Mỗi phiên mới/STOP/mất focus đưa ga về thấp nhất. Roll, pitch, yaw tự về giữa.",11,Palette.muted),full(8))
-            addView(button("ĐẶT GA THẤP NHẤT").apply{setOnClickListener{resetInputs();update()}},full(10))
+            val cancel={actions.stop("Hệ thống hủy thao tác chạm; đã thu hồi quyền RC");resetInputs()}
+            stickLeft.onCancel=cancel;stickRight.onCancel=cancel
+            addView(preview,full(4));addView(liveEvidence,full(3))
+            if(!compactLandscape)addView(label("Ga giữ vị trí khi nhấc tay; roll, pitch, yaw tự về giữa. STOP / mất focus / nối lại xóa ga và quyền cũ.",11,Palette.muted),full(6))
         }
-        card(page,"ĐIỀU KHIỂN ĐỘNG LỰC / CHẾ ĐỘ").apply {
-            val controls=row();listOf("ARM ĐANG KHÓA","DISARM ĐANG KHÓA").forEach{title->controls.addView(button(title,Palette.muted).apply{isEnabled=false;alpha=.5f},weight())};addView(controls,full(8))
-            addView(label("Chưa nghiệm thu nguồn động lực, failsafe và RC input: không bật ARM/DISARM hoặc đổi chế độ. Không tự mở khóa sau phép thử CH1.",12,Palette.amber),full(8))
+        card(page,"QUYỀN ĐIỀU KHIỂN PHIÊN HIỆN TẠI").apply {
+            addView(liveDetail,full(5))
+            addView(button("ĐẶT GA THẤP NHẤT").apply{setOnClickListener{stickLeft.reset();stickRight.reset();actions.preview(Mode2Input())}},full(5))
+            addView(label("Ga giữ vị trí khi nhấc tay; roll, pitch, yaw tự về giữa. Không cần ngón tay thứ ba: phiên được xác nhận sẽ giữ quyền khi màn hình điều khiển còn có focus và vòng lặp giao diện hoạt động. STOP / hủy chạm / mất focus / chuyển tab thu hồi quyền.",11,Palette.muted),full(6))
+            controlProfile.adapter=ArrayAdapter(activity,android.R.layout.simple_spinner_dropdown_item,listOf("Chỉ đọc / không phát RC","Thử RC 4 kênh • chỉ DISARMED","Điều khiển • duy trì RC khi ARMED"))
+            controlProfile.onItemSelectedListener=object:AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent:AdapterView<*>?,view:View?,position:Int,id:Long){
+                    (view as? TextView)?.setTextColor(Palette.text)
+                    actions.selectControlMode(ControlProfile.values()[position]);resetInputs()
+                }
+                override fun onNothingSelected(parent:AdapterView<*>?){}
+            }
+            addView(controlProfile,full(5))
+            addView(button("ĐỌC LẠI ĐIỀU KIỆN RC").apply{setOnClickListener{actions.refreshControlReadback();resetInputs()}},full(6))
+            addView(label("Đọc chỉ đọc SYSID, RC_OPTIONS, timeout, mapping và MIN/TRIM/MAX từ FC. Nếu điều kiện quá hạn, đọc lại rồi xác nhận. Không tự ghi tham số; mapping hoặc đảo kênh chưa được hỗ trợ sẽ giữ khóa.",11,Palette.muted),full(6))
+            addView(controlProps);addView(controlEsc);addView(controlConsent)
+            enableControl.setOnClickListener {
+                stickLeft.reset();stickRight.reset();actions.preview(Mode2Input())
+                val success=actions.startControl(controlProps.isChecked,controlEsc.isChecked,controlConsent.isChecked)
+                if(!success)Toast.makeText(activity,"Chưa cấp quyền: xem trạng thái điều khiển và tham số FC",Toast.LENGTH_LONG).show()
+            }
+            addView(enableControl,full(6))
+            addView(label("Bản chuẩn bị thử ESP32: bắt buộc tháo cánh ở cả hai chế độ. Chế độ thử RC dừng khi FC ARM; chế độ điều khiển đã cấp quyền tiếp tục RC qua chuyển DISARMED → ARMED. Không tự ARM, không tự tiếp quản FC đã ARMED. Không có chứng nhận bay thực tế.",11,Palette.amber),full(8))
+        }
+        card(page,"ARM / DISARM • LỆNH RIÊNG CÓ XÁC NHẬN").apply {
+            addView(armConfirm)
+            armButton.setOnClickListener{val confirmed=armConfirm.isChecked;armConfirm.isChecked=false;actions.requestArm(true,confirmed)}
+            addView(armButton,full(4));addView(disarmConfirm)
+            disarmButton.setOnClickListener{val confirmed=disarmConfirm.isChecked;disarmConfirm.isChecked=false;actions.requestArm(false,confirmed)}
+            addView(disarmButton,full(4));addView(commandState,full(7))
+            addView(label("Không gửi force ARM/DISARM. ACK chấp nhận chưa chứng minh ARMED; cần HEARTBEAT mới. FC vẫn thực hiện toàn bộ kiểm tra PreArm và bảo vệ của ArduPilot.",11,Palette.muted),full(7))
+        }
+        card(page,"CHẾ ĐỘ ARDUCOPTER").apply {
+            modeSelect.adapter=ArrayAdapter(activity,android.R.layout.simple_spinner_dropdown_item,modeChoices.map{it.second})
+            modeSelect.onItemSelectedListener=object:AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent:AdapterView<*>?,view:View?,position:Int,id:Long){(view as? TextView)?.setTextColor(Palette.text);modeConfirm.isChecked=false}
+                override fun onNothingSelected(parent:AdapterView<*>?){}
+            }
+            addView(modeSelect,full(5));addView(modeConfirm)
+            modeApply.setOnClickListener{val confirmed=modeConfirm.isChecked;modeConfirm.isChecked=false;actions.requestFlightMode(modeChoices[modeSelect.selectedItemPosition].first,confirmed)}
+            addView(modeApply,full(4));addView(modeState,full(7))
+            addView(label("Danh mục đề nghị cho ArduCopter; hỗ trợ thực tế do FC quyết định. Không coi tên trong danh sách là đã được FC hỗ trợ. Phải xem ACK và chế độ HEARTBEAT mới; app không tự thử lại lệnh bị từ chối.",11,Palette.muted),full(7))
         }
     }
     private fun telemetryPage()=column().also{page->
@@ -186,23 +262,26 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         card(page,"SỰ KIỆN GẦN NHẤT").apply{addView(events,full(8));addView(button("XUẤT LOG ĐỂ PHÂN TÍCH").apply{setOnClickListener{actions.export()}},full(10))}
     }
     private fun helpPage()=column().also{page->
-        card(page,"QUY TRÌNH ĐẦU TIÊN").addView(label("1. Cài APK dev.drone.controller cạnh app cũ.\n2. Tháo cánh, ngắt vật lý nguồn ESC. Chưa phát RC.\n3. Chọn Wi-Fi ESP32_DRONE và giữ mạng không Internet.\n4. Kết nối TCP, đợi HEARTBEAT DISARMED từ đúng SYS/COMP.\n5. Xem telemetry, tham số và chẩn đoán chỉ đọc.\n6. Đối chiếu RC1 MIN/TRIM/MAX, lưu xác nhận trong app.\n7. Chỉ sau mô phỏng đạt và được phép riêng: xác nhận ba điều kiện, bật phép thử CH1, giữ deadman. Nếu FC báo CRITICAL, mặc định khóa; chỉ có thể xét chẩn đoán CH1 khi engine xác minh điều kiện RC hẹp và người dùng xác nhận riêng cảnh báo CRITICAL. CRITICAL không có nghĩa an toàn.\n8. Thu log phía FC độc lập để xác minh áp dụng và timeout. Không bật ARM hoặc động cơ.",13),full(8))
+        card(page,"QUY TRÌNH ĐẦU TIÊN").addView(label("1. Cài APK dev.drone.controller cạnh app cũ.\n2. Tháo cánh, ngắt vật lý nguồn ESC. Chưa phát RC.\n3. Chọn Wi-Fi ESP32_DRONE và giữ mạng không Internet.\n4. Kết nối TCP, đợi HEARTBEAT DISARMED từ đúng SYS/COMP.\n5. Xem telemetry, tham số và chẩn đoán chỉ đọc.\n6. Đối chiếu RC1 MIN/TRIM/MAX, lưu xác nhận trong app.\n7. Sau khi đã kiểm tra phần mềm và được phép riêng: xác nhận ba điều kiện, bật phép thử CH1, giữ deadman. Nếu FC báo CRITICAL, mặc định khóa; chỉ có thể xét chẩn đoán CH1 khi engine xác minh điều kiện RC hẹp và người dùng xác nhận riêng cảnh báo CRITICAL. CRITICAL không có nghĩa an toàn.\n8. Thu log phía FC độc lập để xác minh áp dụng và timeout. Với chế độ bốn kênh, chuyển sang TAY CẦN, đọc điều kiện và xác nhận riêng; ARM chỉ thực hiện theo yêu cầu chủ động và FC chấp nhận. Không lắp cánh trong bước thử chuẩn bị này.",13),full(8))
         card(page,"MẤT KẾT NỐI / KHÔI PHỤC").addView(label("STOP, chuyển tab, background, khóa màn hình, mất focus, mất Wi-Fi, HEARTBEAT stale hoặc CRC lỗi sẽ thu hồi quyền thử. Không gửi lại ga cũ và không tự reconnect. Sau sự cố, kiểm tra trạng thái FC và timeout thực tế rồi kết nối thủ công. Không coi một gói neutral là bảo đảm an toàn.",13),full(8))
         card(page,"THU BẰNG CHỨNG").addView(label("Xuất CSV qua trình lưu tài liệu Android, hoặc ADB debug:\nadb shell run-as dev.drone.controller ls files/logs\nadb exec-out run-as dev.drone.controller cat files/logs/TEN_FILE.csv > controller.csv\n\nLog được giữ nội bộ, không gửi lên máy chủ. Kiểm tra dropped/error trong chẩn đoán. Kết quả chưa đo trên thiết bị thật được ghi NOT VERIFIED.",12,Palette.muted),full(8))
-        card(page,"NGUỒN ĐỘNG LỰC VÀ FAILSAFE").addView(label("Ứng dụng không thay thế dừng khẩn cấp độc lập Wi-Fi. RC_OVERRIDE_TIME, radio/GCS failsafe, reset ESP32, socket half-open và nguồn điện thoại phải được đo riêng. Bench PASS không mở khóa ARM, chạy motor hoặc bay. Không sửa ARMING_CHECK hay failsafe để vượt lỗi.",12,Palette.amber),full(8))
+        card(page,"NGUỒN ĐỘNG LỰC VÀ FAILSAFE").addView(label("Ứng dụng không thay thế dừng khẩn cấp độc lập Wi-Fi. RC_OVERRIDE_TIME, radio/GCS failsafe, reset ESP32, socket half-open và nguồn điện thoại phải được đo riêng. Bench PASS không chứng minh an toàn động lực hoặc bay; ARM vẫn cần điều kiện mới và xác nhận riêng. Không sửa ARMING_CHECK hay failsafe để vượt lỗi.",12,Palette.amber),full(8))
     }
     private data class ChannelEditor(val checked:CheckBox,val status:TextView)
     private fun show(index:Int,notify:Boolean=true){
         if(disposed||index !in 0 until pages.childCount)return
         if(notify&&index!=activePage){actions.stop("Chuyển trang: thu hồi quyền thử RC");resetInputs()}
         activePage=index
+        val compactController=compactLandscape&&index==1
+        heading.visibility=if(compactController)GONE else VISIBLE
+        listOf(status,identity,healthWarning,safety,footerHint).forEach{it.visibility=if(compactController)GONE else VISIBLE}
         for(i in 0 until pages.childCount)pages.getChildAt(i).visibility=if(i==index)VISIBLE else GONE
         navButtons.forEachIndexed{i,b->b.setTextColor(if(i==index)Palette.background else Palette.muted);b.background=background(if(i==index)Palette.mint else Palette.card)}
     }
-    fun resetInputs(){stickLeft.reset();stickRight.reset();deadman.release();props.isChecked=false;esc.isChecked=false;consent.isChecked=false;criticalConsent.isChecked=false;testSlider.progress=100}
-    fun dispose(){disposed=true;stickLeft.onValue=null;stickRight.onValue=null;deadman.dispose()}
+    fun resetInputs(){stickLeft.reset();stickRight.reset();deadman.release();props.isChecked=false;esc.isChecked=false;consent.isChecked=false;criticalConsent.isChecked=false;controlProps.isChecked=false;controlEsc.isChecked=false;controlConsent.isChecked=false;armConfirm.isChecked=false;disarmConfirm.isChecked=false;modeConfirm.isChecked=false;testSlider.progress=100}
+    fun dispose(){disposed=true;stickLeft.onValue=null;stickRight.onValue=null;stickLeft.onCancel=null;stickRight.onCancel=null;deadman.dispose()}
     private fun tr(@androidx.annotation.StringRes id:Int,vararg args:Any)=activity.getString(id,*args)
-    private fun armName(arm:ArmState)=when(arm){ArmState.UNKNOWN->tr(R.string.arm_unknown);ArmState.DISARMED->"DISARMED";ArmState.ARMED->tr(R.string.arm_monitoring)}
+    private fun armName(arm:ArmState)=when(arm){ArmState.UNKNOWN->tr(R.string.arm_unknown);ArmState.DISARMED->"DISARMED";ArmState.ARMED->"ARMED"}
     private fun number(n:Double,digits:Int=2)=String.format(Locale.US,"%.${digits}f",n)
     private fun age(value:Long?)=value?.let{"$it ms"}?:"Chưa có dữ liệu"
     private fun channels(values:IntArray?)=values?.take(4)?.joinToString(" / ")?:"Chưa có dữ liệu"
@@ -218,7 +297,34 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         identity.setTextColor(if(e.arm==ArmState.DISARMED&&e.systemHealth in setOf(SystemHealth.STANDBY,SystemHealth.ACTIVE))Palette.mint else Palette.amber)
         healthWarning.text=tr(R.string.health_status, healthName(e.systemHealth), if(e.systemHealth==SystemHealth.CRITICAL)tr(R.string.health_critical_suffix) else "")
         healthWarning.setTextColor(if(e.systemHealth==SystemHealth.CRITICAL||e.systemHealth==SystemHealth.EMERGENCY)Palette.red else Palette.amber)
-        safety.text=e.reason
+        val live=s.live
+        val liveEnabled=live.authority.canTransmit
+        safety.text=if(live.profile==ControlProfile.READ_ONLY)e.reason else live.authority.reason
+        safety.setTextColor(if(liveEnabled)Palette.mint else Palette.amber)
+        liveState.text="${when(live.profile){ControlProfile.READ_ONLY->"CHỈ ĐỌC";ControlProfile.BENCH_4CH->"THỬ RC • DISARMED";ControlProfile.CONTROL->"ĐIỀU KHIỂN • CHƯA KIỂM ĐỊNH BAY"}}\n${authorityName(live.authority.stage)}: ${live.authority.reason}"
+        liveState.setTextColor(if(liveEnabled)Palette.mint else Palette.amber)
+        liveDetail.text=live.authority.reason
+        liveEvidence.text="TX socket: ${live.lastSent?.joinToString(" / ")?:"Chưa có"} • ${live.rcWriteCount} gói\nFC RC_CHANNELS: ${live.lastEcho?.joinToString(" / ")?:"Chưa có"} • ${if(live.authority.rcEchoVerified)"Khớp lệnh mới" else "Chưa khớp lệnh mới"}"
+        if(lastLiveEnabled&&!liveEnabled)resetInputs()
+        lastLiveEnabled=liveEnabled
+        enableControl.isEnabled=e.connected&&e.arm==ArmState.DISARMED&&live.profile!=ControlProfile.READ_ONLY&&!liveEnabled
+        enableControl.alpha=if(enableControl.isEnabled)1f else .45f
+        controlProfile.isEnabled=!liveEnabled
+        controlProps.isEnabled=!liveEnabled;controlEsc.isEnabled=!liveEnabled;controlConsent.isEnabled=!liveEnabled
+        val armAllowed=e.connected&&e.arm==ArmState.DISARMED&&live.armBlocker==null&&live.profile==ControlProfile.CONTROL&&liveEnabled
+        armButton.text=if(armAllowed)"GỬI YÊU CẦU ARM" else "ARM ĐANG KHÓA"
+        armButton.isEnabled=armAllowed
+        val canDisarm=e.connected&&e.arm==ArmState.ARMED&&live.profile==ControlProfile.CONTROL
+        disarmButton.text=if(canDisarm)"GỬI YÊU CẦU DISARM" else "DISARM ĐANG KHÓA"
+        disarmButton.isEnabled=canDisarm
+        commandState.text="${commandName(live.armCommand.status.name)}: ${live.armCommand.reason}\n${live.armBlocker?.let{"Điều kiện ARM: $it"}?:"Điều kiện ứng dụng đạt; FC vẫn kiểm tra PreArm"}"
+        modeApply.isEnabled=e.connected&&e.heartbeatAgeMs?.let{it<1500}==true
+        modeState.text="${live.modeCommand.status}\nMã chế độ yêu cầu: ${live.modeCommand.requestedMode?:"Chưa có"} • ACK: ${live.modeCommand.ackResult?:"Chưa có"} • HEARTBEAT xác nhận: ${if(live.modeCommand.heartbeatConfirmed)"Có" else "Chưa có"}"
+        val attitude=(e.telemetry["Attitude"] as? Telemetry.Attitude)?.takeIf{e.telemetryAgeMs["Attitude"]?.let{age->age<2000}==true}
+        val sys=(e.telemetry["SysStatus"] as? Telemetry.SysStatus)?.takeIf{e.telemetryAgeMs["SysStatus"]?.let{age->age<5000}==true}
+        val global=(e.telemetry["GlobalPosition"] as? Telemetry.GlobalPosition)?.takeIf{e.telemetryAgeMs["GlobalPosition"]?.let{age->age<3000}==true}
+        val hb=(e.telemetry["Heartbeat"] as? Telemetry.Heartbeat)?.takeIf{e.heartbeatAgeMs?.let{age->age<1500}==true}
+        hud.render(attitude?.rollRad,attitude?.pitchRad,attitude?.yawRad,global?.let{number(it.relativeAltitudeMm/1000.0)+" m"}?:"— m",sys?.takeIf{it.voltageMv!=65535}?.let{number(it.voltageMv/1000.0)+" V"}?:"— V",hb?.let{modeName(it.customMode)}?:"CHƯA CÓ FC")
         connection.text=tr(R.string.connection_status, if(e.connected)"Đã kết nối" else "Chưa kết nối", age(e.heartbeatAgeMs), if(e.targetSystem!=null)"Đã nhận autopilot" else "Chưa xác minh")
         preview.text=tr(R.string.joystick_preview, channels(e.previewChannels))
         benchState.text=tr(R.string.bench_state, stateName(e.state.name), healthName(e.systemHealth), e.reason)
@@ -261,12 +367,15 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         val pressure=if(fresh("ScaledPressure",5000))values["ScaledPressure"] as? Telemetry.ScaledPressure else null
         val ekf=if(fresh("EkfStatus",5000))values["EkfStatus"] as? Telemetry.EkfStatus else null
         val text=values["StatusText"] as? Telemetry.StatusText
+        val servo=if(fresh("ServoOutput",2000))values["ServoOutput"] as? Telemetry.ServoOutput else null
+        val landed=if(fresh("ExtendedSysState",3000))values["ExtendedSysState"] as? Telemetry.ExtendedSysState else null
         val lines=mutableListOf<String>()
         if(s.engine.heartbeatAgeMs==null||s.engine.heartbeatAgeMs>=1500)lines+="DỮ LIỆU QUÁ HẠN / CHƯA CÓ HEARTBEAT MỚI\n"
         fun no()="Chưa có dữ liệu"
         lines+="Chế độ ArduCopter: ${heartbeat?.let{modeName(it.customMode)}?:no()}"
         lines+="Pin: ${sys?.let{if(it.voltageMv==65535)no() else number(it.voltageMv/1000.0)+" V"}?:no()}"
         lines+="Dòng / % pin / thời gian còn lại: Chưa xác minh phép đo INA219"
+        lines+="Cảnh báo pin từ FC: ${sys?.let{if(it.unhealthyEnabledSensors and (1L shl 25)!=0L)"CẢM BIẾN PIN LỖI / FAILSAFE CẦN KIỂM TRA" else "SYS_STATUS không báo cảm biến pin lỗi; xem STATUSTEXT"}?:no()}"
         lines+="\nRoll / Pitch / Yaw (độ)\n${attitude?.let{listOf(it.rollRad,it.pitchRad,it.yawRad).joinToString(" / "){rad->number(Math.toDegrees(rad.toDouble()))}}?:no()}"
         lines+="\nGPS fix / vệ tinh: ${gps?.let{"${it.fixType} / ${if(it.satellitesVisible==255)no() else it.satellitesVisible}"}?:no()}"
         lines+="Vĩ độ / kinh độ: ${gps?.takeIf{it.fixType>=2}?.let{"${number(it.latitudeE7/1e7,7)} / ${number(it.longitudeE7/1e7,7)}"}?:no()}"
@@ -275,9 +384,14 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         lines+="Tốc độ thẳng đứng (lên +): ${global?.let{number(-it.velocityDownCms/100.0)+" m/s"}?:no()}"
         lines+="\nÁp suất: ${pressure?.let{number(it.absoluteHpa.toDouble())+" hPa"}?:no()}"
         lines+="Độ cao khí áp: Chưa có nguồn độ cao xác minh"
-        lines+="\nEKF flags: ${ekf?.flags?:no()}"
+        lines+="\nRC đầu vào CH1–4: ${if(s.engine.rcAgeMs?.let{it<1200}==true)channels(s.engine.received) else no()}"
+        lines+="Servo đầu ra 1–4: ${servo?.channels?.take(4)?.joinToString(" / ")?:no()} µs"
+        lines+="Tiếp đất theo FC: ${landed?.let{when(it.landedState){1->"Trên mặt đất";2->"Đang trên không";3->"Đang cất cánh";4->"Đang hạ cánh";else->"Chưa xác định"}}?:no()}"
+        lines+="\nPreArm theo SYS_STATUS: ${sys?.let{if(!it.preArmCheckPresent||!it.preArmCheckEnabled)"FC chưa báo kiểm tra PreArm đang bật" else if(it.preArmCheckHealthy)"FC báo kiểm tra đạt" else "CHƯA ĐẠT • đọc STATUSTEXT"}?:no()}"
+        lines+="EKF: ${ekf?.let{if(!it.attitudeValid||it.uninitialized)"CẢNH BÁO • attitude chưa hợp lệ / chưa khởi tạo" else "Attitude hợp lệ; cờ ${it.flags}"}?:no()}"
+        lines+="EKF vận tốc ngang / đứng: ${ekf?.let{"${if(it.horizontalVelocityValid)"Hợp lệ" else "Chưa hợp lệ"} / ${if(it.verticalVelocityValid)"Hợp lệ" else "Chưa hợp lệ"}"}?:no()}"
         lines+="Cảm biến enabled / healthy: ${sys?.let{"0x${it.sensorsEnabled.toString(16)} / 0x${it.sensorsHealthy.toString(16)}"}?:no()}"
-        lines+="STATUSTEXT / PreArm:\n${text?.text?:no()}"
+        lines+="STATUSTEXT / PreArm (tuổi ${eAge(s,"StatusText")?.let{"$it ms"}?:"chưa có"}):\n${text?.let{"Mức ${it.severity}: ${it.text}"}?:no()}"
         lines+="\nTuổi mẫu telemetry (ms):\n"+s.engine.telemetryAgeMs.entries.sortedBy{it.key}.joinToString(" · "){"${it.key} ${it.value}"}
         return lines.joinToString("\n")
     }
@@ -294,6 +408,19 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         SystemHealth.FLIGHT_TERMINATION->"Kết thúc vận hành (FLIGHT_TERMINATION)"
     }
     private fun eAge(s:SessionSnapshot,key:String)=s.engine.telemetryAgeMs[key]
+    private fun authorityName(stage:AuthorityStage)=mapOf(
+        "DISCONNECTED" to "Chưa kết nối", "WIFI_BOUND" to "Đã chọn Wi-Fi", "TCP_CONNECTED" to "TCP đã nối",
+        "FC_HEARTBEAT_VERIFIED" to "Đã xác minh FC", "TELEMETRY_READY" to "Telemetry sẵn sàng",
+        "BENCH_READY" to "Thử RC sẵn sàng", "BENCH_TX_ACTIVE" to "Đang phát thử RC", "RC_ECHO_VERIFIED" to "Phản hồi RC khớp",
+        "FLIGHT_CANDIDATE_READY" to "Điều khiển sẵn sàng", "ARMED_CONTROL_CANDIDATE" to "Đang điều khiển ARMED",
+        "LINK_LOST" to "Mất liên kết", "FAILSAFE" to "Đã thu hồi quyền do lỗi", "LOCKED" to "Đang khóa"
+    )[stage.name]?:"Đang khóa"
+    private fun commandName(name:String)=mapOf(
+        "IDLE" to "Chưa có lệnh", "INTENT_CREATED" to "Đã tạo yêu cầu", "INTENT_ACCEPTED" to "Đã tiếp nhận yêu cầu",
+        "ACK_ACCEPTED_WAITING_HEARTBEAT" to "ACK chấp nhận, chờ HEARTBEAT", "IN_PROGRESS" to "FC đang xử lý",
+        "CONFIRMED" to "Đã xác nhận trạng thái thực", "DENIED" to "FC từ chối", "UNSUPPORTED" to "FC không hỗ trợ",
+        "FAILED" to "Thất bại", "CANCELLED" to "Đã hủy theo dõi", "TIMED_OUT" to "Quá hạn", "ABORTED" to "Bị ngắt"
+    )[name]?:"Chờ xác nhận"
     private fun stateName(name:String)=mapOf(
         "DISCONNECTED" to "Chưa kết nối", "CONNECTING" to "Đang kết nối", "CONNECTED_UNVERIFIED" to "TCP đã nối, chưa xác minh FC",
         "TELEMETRY_READY" to "Telemetry đã sẵn sàng", "RC_DIAGNOSTIC" to "Chẩn đoán RC chỉ đọc",

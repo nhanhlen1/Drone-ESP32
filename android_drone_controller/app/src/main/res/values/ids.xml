@@ -1,0 +1,19 @@
+<resources>
+    <item name="left_stick" type="id" />
+    <item name="right_stick" type="id" />
+    <item name="control_profile" type="id" />
+    <item name="control_enable" type="id" />
+    <item name="control_props" type="id" />
+    <item name="control_esc" type="id" />
+    <item name="control_consent" type="id" />
+    <item name="arm_confirm" type="id" />
+    <item name="disarm_confirm" type="id" />
+    <item name="arm_button" type="id" />
+    <item name="disarm_button" type="id" />
+    <item name="mode_selector" type="id" />
+    <item name="mode_confirm" type="id" />
+    <item name="mode_apply" type="id" />
+    <item name="connect_host" type="id" />
+    <item name="connect_port" type="id" />
+    <item name="connect_button" type="id" />
+</resources>

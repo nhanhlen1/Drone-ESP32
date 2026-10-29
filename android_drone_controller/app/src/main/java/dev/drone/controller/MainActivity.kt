@@ -1,6 +1,7 @@
 package dev.drone.controller
 
 import android.content.Intent
+import dev.drone.controller.transport.ControlProfile
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowInsets
@@ -46,6 +47,15 @@ class MainActivity:ComponentActivity() {
             override fun configure(channel:Int,min:Int,max:Int,trim:Int,verified:Boolean){model.configure(channel,min,max,trim,verified)}
             override fun startBench(props:Boolean,esc:Boolean,authorised:Boolean,criticalRcDiagnosticAuthorised:Boolean){model.startBench(props,esc,authorised,criticalRcDiagnosticAuthorised)}
             override fun testValue(value:Float){model.testValue(value)}
+            override fun refreshControlReadback(){model.refreshControlReadback()}
+            override fun selectControlMode(profile:ControlProfile){model.selectControlMode(profile)}
+            override fun startControl(propsRemoved:Boolean,escIsolated:Boolean,authorised:Boolean)=model.startControl(propsRemoved,escIsolated,authorised)
+            override fun requestArm(desired:Boolean,confirmed:Boolean){
+                val result=model.requestArm(desired,confirmed)
+                if(result is dev.drone.controller.command.ArmRequestResult.Rejected)
+                    Toast.makeText(this@MainActivity,result.reason,Toast.LENGTH_LONG).show()
+            }
+            override fun requestFlightMode(mode:Int,confirmed:Boolean){model.requestFlightMode(mode,confirmed)}
             override fun openWifi(){startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS))}
             override fun logDescription()="CSV: ${model.logger.file.name}\nDòng log bị bỏ: ${model.logger.dropped.get()} • Lỗi ghi: ${model.logger.error?:"Không"}"
             override fun export(){model.stop("Xuất log: đã dừng quyền phát RC");exportLog.launch(model.logger.file.name)}

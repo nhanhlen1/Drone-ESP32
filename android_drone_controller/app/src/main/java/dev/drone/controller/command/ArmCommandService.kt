@@ -25,15 +25,15 @@ enum class ArmCommandStatus {
 data class ArmCommandSnapshot(
     val status:ArmCommandStatus,val intent:ArmCommandIntent?,val reason:String,
     val intentAccepted:Boolean=false,val ackResult:Int?=null,val observedArmed:Boolean?=null,
-    val heartbeatConfirmed:Boolean=false,
+    val heartbeatConfirmed:Boolean=false,val socketWritten:Boolean=false,
 )
 sealed class ArmRequestResult {
     data class Accepted(val intentId:Long):ArmRequestResult()
     data class Rejected(val reason:String):ArmRequestResult()
 }
 
-/** Inert in production: default approval denies every request; default sink refuses
- * every intent. The application never wires this service into its TCP session.
+/** Default approval and sink deny requests; the production session injects
+ * explicit commissioning consent and its bounded command hand-off.
  * Tests can inject a simulated approval and semantic sink without creating bytes.
  * All methods use a local monotonic clock. No request is retried or auto-created.
  */
@@ -77,6 +77,10 @@ class ArmCommandService(
         state=state.copy(status=if(accepted)ArmCommandStatus.INTENT_ACCEPTED else ArmCommandStatus.FAILED,
             intentAccepted=accepted,reason=if(accepted)"Ý định được tiếp nhận; chưa chứng minh socket/FC/trạng thái thực" else "Không có đường phát lệnh; chưa gửi ARM/DISARM")
         return if(accepted)ArmRequestResult.Accepted(intent.id) else reject(state.reason)
+    }
+
+    @Synchronized fun markSocketWritten(intentId:Long) {
+        if(state.intent?.id==intentId && pending())state=state.copy(socketWritten=true,reason="Đã ghi đầy đủ socket; chờ ACK và HEARTBEAT")
     }
 
     /** Source FC must match the outstanding intent; ACK target extensions may be
