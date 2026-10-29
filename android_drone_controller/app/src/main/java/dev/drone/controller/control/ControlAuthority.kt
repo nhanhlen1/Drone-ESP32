@@ -42,12 +42,13 @@ data class AuthorityRcParameters(
     val connectionEpoch:Long,val identity:AuthorityIdentity,val receivedAtMs:Long,
     val gcsSystemLow:Int,val gcsSystemHigh:Int,val rcOptions:Int,
     val overrideTimeoutSeconds:Float,val channels:List<ChannelCalibration>,
-    val mappingVerified:Boolean=false,
+    val mappingVerified:Boolean=false,val rudderArming:Int=0,
+    val flightModeChannel:Int=6,val auxiliaryOptions:List<Int> = listOf(0,0,0,0),
 ) {
     internal fun usable(gcsSystem:Int):Boolean {
         val accepts=if(gcsSystemHigh>gcsSystemLow)gcsSystem in gcsSystemLow..gcsSystemHigh else gcsSystem==gcsSystemLow
         return gcsSystemLow in 1..255 && gcsSystemHigh in 0..255 && accepts && rcOptions>=0 &&
-            rcOptions and 2==0 && overrideTimeoutSeconds.isFinite() && overrideTimeoutSeconds>0f &&
+            rcOptions and 2==0 && rudderArming==0 && (flightModeChannel==0 || flightModeChannel in 5..16) && auxiliaryOptions==listOf(0,0,0,0) && overrideTimeoutSeconds.isFinite() && overrideTimeoutSeconds>0f &&
             overrideTimeoutSeconds<=1f && channels.size==4 && channels.all{it.valid()&&it.verified} && mappingVerified
     }
 }
@@ -193,6 +194,9 @@ class ControlAuthority(
         if(!enabled)requested=neutral()
         if(!enabled&&!everEnabled&&snapshot.usable(gcsSystem))transition(AuthorityStage.TELEMETRY_READY,"Đã đọc cấu hình RC phù hợp; chưa có quyền phát")
     }
+    @Synchronized fun invalidateParameters(message:String="Cần đọc lại cấu hình RC trong phiên này") {
+        parameters=null;revoke(AuthorityStage.LOCKED,message)
+    }
     @Synchronized fun observeRcEcho(connectionEpoch:Long,identity:AuthorityIdentity,channels:List<Int>,receivedAtMs:Long) {
         if(!connected || connectionEpoch!=epoch || identity!=target || channels.size!=4 || receivedAtMs>clock.nowMs())return
         if(echoAt!=null&&receivedAtMs<=echoAt!!)return
@@ -209,7 +213,7 @@ class ControlAuthority(
         if(target==null||!fresh(heartbeatAt,HEARTBEAT_FRESH_MS)||armed==null)return "HEARTBEAT quá hạn hoặc chưa có FC hợp lệ"
         if(health !in setOf(SystemHealth.STANDBY,SystemHealth.ACTIVE) && !(groundTestConsent && mode==AuthorityMode.BENCH_4CH && armed==false && health==SystemHealth.CRITICAL && rcOnlyCritical && fresh(rcOnlyCriticalAt,1500L)))return "Sức khỏe FC $health; giữ khóa quyền này"
         val p=parameters ?:return "Chưa đọc thông số RC trong phiên này"
-        if(p.connectionEpoch!=epoch||p.identity!=target||!p.usable(gcsSystem))return "Thông số SYSID/RC_OPTIONS/timeout/calibration/mapping chưa phù hợp"
+        if(p.connectionEpoch!=epoch||p.identity!=target||!p.usable(gcsSystem))return "Thông số SYSID/RC_OPTIONS/ARMING_RUDDER/FLTMODE_CH/RCx_OPTION/timeout/calibration/mapping chưa phù hợp"
         return null
     }
     private fun atStartupMinimum(values:List<Int>):Boolean {
@@ -305,7 +309,7 @@ class ControlAuthority(
         written.addLast(writtenAtMs to channels.toList());while(written.size>20)written.removeFirst()
     }
     @Synchronized fun stop(message:String="Người vận hành dừng phát điều khiển")=revoke(AuthorityStage.LOCKED,message)
-    @Synchronized fun fault(message:String)=revoke(AuthorityStage.FAILSAFE,message)
+    @Synchronized fun fault(message:String) {heartbeatAt=null;revoke(AuthorityStage.FAILSAFE,message)}
     private fun outputChannels()=if(mode==AuthorityMode.BENCH)listOf(requested[0],65535,65535,65535) else requested.toList()
     @Synchronized fun tick() {
         if(!enabled)return
@@ -314,7 +318,7 @@ class ControlAuthority(
         if((deadmanAt!=null||firstWriteAt!=null)&&!fresh(inputAt,INPUT_FRESH_MS)){revoke(AuthorityStage.LOCKED,"Đầu vào điều khiển quá hạn; không phát lại giá trị cũ");return}
         if(mode in setOf(AuthorityMode.BENCH,AuthorityMode.BENCH_4CH)) {
             if(armed!=false){revoke(AuthorityStage.LOCKED,"ARMED không được phát RC Bench");return}
-            if(firstWriteAt!=null&&clock.nowMs()-firstWriteAt!!>=if(mode==AuthorityMode.BENCH)BENCH_LEASE_MS else 5000L){revoke(AuthorityStage.LOCKED,if(mode==AuthorityMode.BENCH)"Đã hết hạn CH1 Bench; cần xác nhận riêng mới"else "Đã hết phép thử bốn kênh 5 giây; cần xác nhận mới");return}
+            if(firstWriteAt!=null&&clock.nowMs()-firstWriteAt!!>=if(mode==AuthorityMode.BENCH)BENCH_LEASE_MS else 30_000L){revoke(AuthorityStage.LOCKED,if(mode==AuthorityMode.BENCH)"Đã hết hạn CH1 Bench; cần xác nhận riêng mới"else "Đã hết phép thử bốn kênh 30 giây; cần xác nhận mới");return}
             if(firstWriteAt==null&&clock.nowMs()-(enabledAt?:clock.nowMs())>=BENCH_START_WINDOW_MS){revoke(AuthorityStage.LOCKED,"Quá hạn bắt đầu phép thử bench");return}
         }
         if(mode in setOf(AuthorityMode.FLIGHT_CANDIDATE,AuthorityMode.OPERATOR_CONTROL)) {

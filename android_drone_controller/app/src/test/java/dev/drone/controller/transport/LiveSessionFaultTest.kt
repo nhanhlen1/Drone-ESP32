@@ -11,8 +11,6 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -50,7 +48,9 @@ class LiveSessionFaultTest {
                 assertTrue("fragmented inbound headers exercised",fc.fragmented.get()>0)
                 assertEquals(0,fc.errors.get())
                 fc.overrides().forEach { assertAuxiliaryUntouched(it.frame) }
-                assertTrue(session.snapshot().rcTiming.samples>=18)
+                val timing=session.snapshot().rcTiming
+                assertTrue(timing.samples>=18)
+                println("MOCK_LIVE_TIMING frames=${selected.size} peerObservedHz=$observedHz intervalP50Ms=${timing.intervalP50Ms} intervalP95Ms=${timing.intervalP95Ms} intervalP99Ms=${timing.intervalP99Ms} jitterP95Ms=${timing.jitterP95Ms}; localhost socket timing, not RF latency")
             }
         } }
     }
@@ -83,6 +83,63 @@ class LiveSessionFaultTest {
                 await("RC feedback freshness expires",2600) { !session.snapshot().live.authority.canTransmit }
                 assertEquals(ArmState.DISARMED,session.snapshot().engine.arm)
                 assertTrue("HEARTBEAT remained fresh",session.snapshot().engine.heartbeatAgeMs!!<1000)
+                quiet(session,fc)
+            }
+        } }
+    }
+
+    @Test fun missingOrEnabledRudderArmingBlocksFourChannelsRatherThanAllowingStickArming() {
+        for(rudder in listOf<Float?>(null,1f,2f)) {
+            MockFc(rudder).use { fc -> BenchSession().use { session ->
+                session.foreground(true);session.selectControlMode(ControlProfile.BENCH_4CH)
+                session.connect("127.0.0.1",fc.port)
+                await("parameter batch for ARMING_RUDDER=$rudder") {
+                    session.snapshot().engine.arm==ArmState.DISARMED &&
+                        session.snapshot().engine.parameters.containsKey("RC4_REVERSED")
+                }
+                assertFalse("ARMING_RUDDER=$rudder must fail closed",session.enableControl(true,true,true))
+                // A full-yaw gesture must never bypass the explicit ARM button.
+                session.controlInput(0f,0f,0f,1f);session.controlPulse()
+                quiet(session,fc)
+                assertTrue("no stick-arming RC frame",fc.overrides().isEmpty())
+                assertTrue("parameter discovery is read-only",fc.frames.none{it.frame.messageId==23})
+            } }
+        }
+    }
+
+    @Test fun stalledUiInputStopsWithinWatchdogEvenIfDeadmanContinuesAndFreshInputCannotResume() {
+        MockFc().use { fc -> BenchSession().use { session ->
+            ready(session,fc)
+            Pulse(session).use { pulse ->
+                enable(session);pulse.start()
+                await("initial control before UI stall") { fc.overrides().size>=3 }
+                pulse.pause()
+                val onlyDeadman=Executors.newSingleThreadScheduledExecutor()
+                try {
+                    onlyDeadman.scheduleAtFixedRate({session.controlPulse()},0,40,TimeUnit.MILLISECONDS)
+                    val stoppedAt=System.nanoTime()
+                    await("200ms input watchdog",900) { !session.snapshot().live.authority.canTransmit }
+                    val observedMs=(System.nanoTime()-stoppedAt)/1_000_000
+                    assertTrue("UI input watchdog observed ${observedMs}ms",observedMs<600)
+                    quiet(session,fc)
+                    pulse.start()
+                    quiet(session,fc)
+                    assertFalse("fresh pulse/input cannot resurrect revoked permission",session.snapshot().live.authority.canTransmit)
+                } finally {onlyDeadman.shutdownNow()}
+            }
+        } }
+    }
+
+    @Test fun changedReadOnlyRcMappingRevokesAnActiveSessionWithoutAdaptingChannels() {
+        MockFc().use { fc -> BenchSession().use { session ->
+            ready(session,fc,ControlProfile.BENCH_4CH)
+            Pulse(session).use { pulse ->
+                enable(session);pulse.start()
+                await("initial control before FC mapping changes") { fc.overrides().size>=3 }
+                fc.rollMapping.set(2)
+                await("parameter change revokes active authority",1600) { !session.snapshot().live.authority.canTransmit }
+                quiet(session,fc)
+                assertFalse("mismatched mapping cannot be explicitly re-enabled",session.enableControl(true,true,true))
                 quiet(session,fc)
             }
         } }
@@ -153,7 +210,7 @@ class LiveSessionFaultTest {
         MockFc().use { fc ->
             val started=AtomicBoolean(false)
             BenchSession(writer=ChannelWriter { channel,bytes ->
-                val rc=bytes.get(7).toInt() and 255==70
+                val rc=(bytes.get(7).toInt() and 255)==70
                 if(rc && bytes.position()>0)0 else {
                     val limit=bytes.limit()
                     try {
@@ -180,7 +237,7 @@ class LiveSessionFaultTest {
         MockFc().use { fc ->
             val block=AtomicBoolean(true);val attempts=AtomicInteger()
             BenchSession(writer=ChannelWriter { channel,bytes ->
-                if(bytes.get(7).toInt() and 255==70 && block.get()){attempts.incrementAndGet();0}
+                if((bytes.get(7).toInt() and 255)==70 && block.get()){attempts.incrementAndGet();0}
                 else channel.write(bytes)
             }).use { session ->
                 ready(session,fc,ControlProfile.BENCH_4CH)
@@ -242,12 +299,13 @@ class LiveSessionFaultTest {
         override fun close(){pause();executor.shutdownNow()}
     }
     private data class Capture(val frame:MavFrame,val connection:Int,val atNanos:Long)
-    private class MockFc:Closeable {
+    private class MockFc(private val rudderArming:Float?=0f):Closeable {
         private val server=ServerSocket(0,8,InetAddress.getByAddress(byteArrayOf(127,0,0,1)))
         val port:Int get()=server.localPort
         val armed=AtomicBoolean(false)
         val heartbeatEnabled=AtomicBoolean(true)
         val rcEnabled=AtomicBoolean(true)
+        val rollMapping=AtomicInteger(1)
         val connections=AtomicInteger()
         val fragmented=AtomicInteger()
         val errors=AtomicInteger()
@@ -264,7 +322,10 @@ class LiveSessionFaultTest {
         private val params=linkedMapOf(
             "MAV_GCS_SYSID" to 255f,"MAV_GCS_SYSID_HI" to 0f,"RC_OPTIONS" to 33f,"RC_OVERRIDE_TIME" to .5f,
             "RCMAP_ROLL" to 1f,"RCMAP_PITCH" to 2f,"RCMAP_THROTTLE" to 3f,"RCMAP_YAW" to 4f,
-        ).apply{for(n in 1..4){put("RC${n}_MIN",1100f);put("RC${n}_MAX",1900f);put("RC${n}_TRIM",1500f);put("RC${n}_REVERSED",0f)}}
+        ).apply{
+            if(rudderArming!=null)put("ARMING_RUDDER",rudderArming)
+            for(n in 1..4){put("RC${n}_MIN",1100f);put("RC${n}_MAX",1900f);put("RC${n}_TRIM",1500f);put("RC${n}_REVERSED",0f)}
+        }
         init{emitter.scheduleAtFixedRate({peers.forEach{it.emit()}},0,50,TimeUnit.MILLISECONDS)}
         fun overrides()=frames.filter{it.frame.messageId==70}
         private inner class Peer(private val socket:Socket,private val id:Int) {
@@ -302,7 +363,7 @@ class LiveSessionFaultTest {
                 })
                 if(emissions%10==0)params.entries.forEachIndexed{index,entry->
                     messages+=encode(22,ByteArray(25).apply {
-                        putF32(0,entry.value);putU16(4,params.size);putU16(6,index);entry.key.toByteArray(Charsets.US_ASCII).copyInto(this,8);this[24]=9
+                        putF32(0,if(entry.key=="RCMAP_ROLL")rollMapping.get().toFloat() else entry.value);putU16(4,params.size);putU16(6,index);entry.key.toByteArray(Charsets.US_ASCII).copyInto(this,8);this[24]=9
                     })
                 }
                 emissions++

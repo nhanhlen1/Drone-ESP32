@@ -1,84 +1,69 @@
-# Kiến trúc, quyền phát và mapping RC
+# Kiến trúc và quyền điều khiển — 0.3.0
 
 ```mermaid
 flowchart TD
-    UI[Giao diện Android / joystick / deadman] --> VM[ViewModel / StateFlow]
-    VM --> CORE[BenchEngine / clock monotonic / epoch permit]
-    CORE -->|CH1 permit hữu hạn| TCP[BenchSession một actor TCP]
-    TCP --> ENC[Encoder MAVLink2]
-    ENC --> WIFI[Android Wi-Fi binding]
-    WIFI --> FC[ArduPilot / RC backend]
-    FC --> PARSE[Parser CRC / telemetry decoder]
-    PARSE --> CORE
-    CORE --> VM
-    TCP --> LOG[CSV queue hữu hạn]
-    UI -->|chỉ xem trước| MAP[Mode2 mapping offline]
+    UI[MotionEvent đa điểm / Mode 2] --> VM[ControllerViewModel / input liveness]
+    VM --> AUTH[ControlAuthority / epoch / thời hạn]
+    AUTH --> ACTOR[BenchSession: một actor và scheduler RC]
+    CMD[ArmCommandService / mode intent] --> ACTOR
+    ACTOR --> ENC[Encoder MAVLink2]
+    ENC --> WIFI[AndroidWifiBinder / TCP]
+    WIFI --> FC[ArduCopter quad]
+    FC --> PARSER[Parser CRC / sequence / decoder]
+    PARSER --> RT[LiveControlRuntime / snapshot mới]
+    RT --> AUTH
+    RT --> CMD
+    ACTOR --> LOG[CSV queue hữu hạn]
+    RT --> VM
 ```
 
-Socket RX/TX và scheduler độc lập render. UI nhận snapshot khoảng 10 Hz; RC tối đa 20 Hz, HEARTBEAT GCS 1 Hz. Không catch up tick cũ. Chỉ một frame pending; nếu quyền RC bị thu hồi khi frame đã ghi một phần thì đóng socket thay vì hoàn tất gói cũ. Đồng bộ generation và chuyển trạng thái với khóa engine để actor phiên cũ không ghi đè trạng thái phiên mới.
+## Một đường phát, các quyền tách biệt
 
-Mỗi permit có epoch, serial, target, giá trị và tuổi dưới 50 ms; trước mỗi partial write đều kiểm tra lại. RC frame ở kernel/TCP đã ghi không thể thu hồi bằng UI; đó là lý do bắt buộc ngắt vật lý nguồn ESC khi bench và kiểm chứng failsafe phía FC.
+`BenchSession` giữ một actor nonblocking, một frame pending và một encoder/sequence theo connection. RX được xử lý trước quyết định phát. Profile READ_ONLY dùng telemetry/chẩn đoán; BENCH_4CH phát đủ bốn kênh khi DISARMED; CONTROL là phiên chuẩn bị điều khiển tháo cánh, tiếp tục RC khi FC ARM hợp lệ. BenchEngine cũ chỉ giữ phép CH1 hữu hạn để hồi quy và chẩn đoán ban đầu; chọn profile bốn kênh thu hồi quyền bench cũ. Không có hai scheduler RC chạy song song.
 
-## State machine và quyền
+UI cập nhật đầu vào/liveness trên main thread, độc lập actor TCP. Các trục hồi tâm khi nhả đúng pointer, ga giữ tương đối từ điểm chạm. Input và deadman quá 200 ms thu hồi quyền; giữ ga không đồng nghĩa được giữ mãi một input đã quá hạn khi UI treo. Quyền được kiểm tra lại ngay trước mỗi partial write. Nếu một frame điều khiển đã ghi một phần rồi quyền bị thu hồi, đóng TCP; không hoàn tất frame cũ hoặc nối frame mới vào phần còn lại. Backpressure có thời hạn 200 ms. Không catch up các tick RC đã lỡ.
 
-| Trạng thái | Quyền |
+Clock an toàn là monotonic local. Khoảng cách RC dự kiến 50 ms; số Hz và p50/p95/p99/jitter là quan sát socket write, không là độ trễ Wi-Fi/FC. Logger nhận cả snapshot khi hoàn tất RC/command write và ACK; queue 128/dung lượng hữu hạn, dropped/error được hiển thị.
+
+## Điều kiện phiên
+
+| Profile | Điều kiện bắt đầu | Khi ARMED | Dừng |
+|---|---|---|---|
+| READ_ONLY | TCP/Wi-Fi, khám phá HEARTBEAT | Theo dõi | Không có RC |
+| CH1 cũ | Xác nhận tháo cánh/ESC cách ly, calibration, DISARMED, deadman | Thu hồi | CH1 ±20 µs, 750 ms |
+| BENCH_4CH | Tháo cánh, ESC cách ly, operator xác nhận, RC readback/mapping hợp lệ, DISARMED | Thu hồi | Lease 30 s, input/HB/echo/session watchdog |
+| CONTROL | Tháo cánh, operator xác nhận, FC khỏe, tham số mới, RC mới, ga min/trục giữa, bắt đầu DISARMED | Tiếp tục bốn kênh trong phiên hợp lệ | STOP/lỗi/stale/focus/Wi-Fi hoặc FC DISARM |
+
+Không gán hồ sơ hardware-qualified giả cho operator consent. `enableFlight` cũ vẫn là API kiểm định có provider mặc định từ chối; đường operator thực được gọi riêng và không tuyên bố đã nghiệm thu bay. Không tự tiếp quản một FC đang ARMED khi kết nối.
+
+Ngoại lệ receiverless CRITICAL chỉ dành BENCH_4CH có ESC cách ly: SYS_STATUS mới chỉ báo enabled unhealthy RC/PREARM, không có enabled sensor lỗi khác và không có unhealthy extension. Không cho CONTROL/ARM đi qua ngoại lệ này. Phải xử lý nguyên nhân và chờ FC báo khỏe/PreArm đạt; không thay tham số để vượt cổng. RC echo chỉ là tương quan, không chứng minh override còn hiệu lực sau khi hết hạn.
+
+## Tham số chỉ đọc và mapping
+
+Đọc lại theo từng connection và trước cấp quyền khi hết hạn. Bấm đọc lại điều kiện thu hồi quyền và vô hiệu toàn bộ snapshot an toàn cũ; chờ đủ tập tham số mới, không ghép một phần readback mới với quyền cũ. Đổi bất kỳ tham số bắt buộc nào trong phiên làm thu hồi quyền, kể cả khi giá trị mới không hợp lệ/không giải mã được thành cấu hình hỗ trợ.
+
+| Tham số | Yêu cầu/ý nghĩa |
 |---|---|
-| DISCONNECTED / CONNECTING | Không phát application message |
-| CONNECTED_UNVERIFIED | HEARTBEAT GCS; không RC |
-| TELEMETRY_READY / RC_DIAGNOSTIC | HEARTBEAT và yêu cầu telemetry/tham số chỉ đọc hữu hạn |
-| RC_BENCH_READY | Chờ deadman trong 5 giây; chưa phát RC |
-| RC_BENCH_ACTIVE | CH1 ±20 µs, kênh khác ignore; tối đa 750 ms từ permit đầu |
-| CONTROL_LOCKED / LINK_LOST / FAILSAFE | Không RC; còn TCP có thể gửi HEARTBEAT/chẩn đoán |
-| ARMED_MONITORING | Chỉ giám sát, không RC Bench |
-| RC_INPUT_VERIFIED | Dự trù cấp nghiệm thu; hiện không tự chuyển vào trạng thái này |
+| MAV_GCS_SYSID / SYSID_MYGCS | Sender 255 phải thuộc phạm vi GCS được chấp nhận |
+| MAV_GCS_SYSID_HI | Dải SYSID theo revision; bản cũ không có thì dùng tên legacy phù hợp |
+| RC_OPTIONS | Bit1 (giá trị2) ignore override phải tắt. **33 = bit0 ignore receiver + bit5 throttle-idle arming check**, không phải bỏ failsafe |
+| RC_OVERRIDE_TIME | Dương và không quá 1 s để mở phiên; tham số đọc về không thay thế phép đo timeout thật |
+| RC1–4_MIN/TRIM/MAX/REVERSED | Giá trị hợp lệ theo FC, không dùng mặc định thay readback; hiện hỗ trợ REVERSED=0 |
+| RCMAP_ROLL/PITCH/THROTTLE/YAW | Hiện hỗ trợ thứ tự 1/2/3/4 |
+| ARMING_RUDDER | Bắt buộc đọc0 để ngăn ARM/DISARM bằng cần yaw; không tự sửa |
+| FLTMODE_CH / RC1–4_OPTION | Mode channel0 hoặc5–16; các option trục phải0 để tránh kích hoạt mode/chức năng phụ |
+| Failsafe | Chỉ đọc, không tự sửa; không phát kênh phụ |
 
-Phát hiện heartbeat từ nhiều định danh autopilot khóa RC đến kết nối mới. Hai thiết bị cùng SYS/COMP unsigned không thể phân biệt chắc chắn. CRC chống lỗi byte, không phải xác thực. Không có tự chọn phương thức RC khác sau sự cố.
+CH1 roll từ cần phải ngang; CH2 pitch từ cần phải dọc với screen-up → RC thấp; CH3 ga cần trái dọc; CH4 yaw cần trái ngang. Calibration PWM theo từng trục, không giả định 1100/1500/1900 khi FC báo cấu hình khác. CH5–8 luôn 65535 ignore, CH9–18 luôn 0 ignore. Không tự chuyển sang MANUAL_CONTROL hoặc phát hai phương thức cùng lúc.
 
-## Mapping
+## ARM/DISARM và chế độ
 
-Thông tin người dùng: MIN/TRIM/MAX RC1–4 = 1100/1500/1900 µs. Cần đối chiếu lại theo phiên thật, không lấy bảng này thay cho readback.
+ARM 400 chỉ theo xác nhận riêng: phiên CONTROL đang phát hợp lệ, RC_CHANNELS mới khớp bốn kênh, ga min và R/P/Y đúng trim, HEARTBEAT mới, SYS_STATUS PreArm present/enabled/healthy và không enabled unhealthy sensor, EKF attitude mới hợp lệ, EXTENDED_SYS_STATE xác nhận đang trên đất. FC vẫn tự kiểm tra PreArm khi nhận lệnh. `param2=0`; không force, không `ARMING_CHECK`/PARAM_SET và không retry tự động.
 
-| Kênh | Joystick Mode 2 | Mapping xem trước |
-|---|---|---|
-| CH1 roll | Phải, ngang | Trái 1100; giữa 1500; phải 1900 |
-| CH2 pitch | Phải, dọc | Đẩy lên → đầu vào pitch RC thấp; về giữa 1500 |
-| CH3 throttle | Trái, dọc | 0…1 → 1100…1900; phiên mới/STOP/reconnect về min |
-| CH4 yaw | Trái, ngang | Trái 1100; giữa 1500; phải 1900 |
+DISARM thường chỉ theo xác nhận riêng với định danh duy nhất, foreground, heartbeat và tiếp đất mới; không force DISARM trên không. Đường DISARM không bị khóa chỉ vì RC đã STOP, nhưng không được dùng dữ liệu cũ/stream lỗi. Mode 176 theo xác nhận riêng và danh mục ArduCopter; FC có thể từ chối mode. Theo dõi intent, đủ socket write, ACK và HEARTBEAT mới riêng. ACK trước khi frame lệnh ghi xong bị bỏ; ACK không tự xác nhận trạng thái ARM/mode. Không có transaction ID trong ACK400/176 nên vẫn có giới hạn tương quan khi unsigned peer khác cùng SYSID phát lệnh.
 
-Đây là mapping xem trước và test mô phỏng; yaw/ga thật không được phép phát ở cấp nghiệm thu hiện tại. Throttle đổi tương đối từ điểm chạm để tránh nhảy khi đặt ngón; thả tay giữ vị trí xem trước. Ba trục còn lại về giữa. Deadzone 6%, giới hạn biên, pointer ID riêng. RCx_REVERSED/RCMAP phải được kiểm chứng nếu firmware khác cấu hình đã cung cấp.
+## Mất điều khiển và mức bằng chứng
 
-RC_CHANNELS_OVERRIDE sử dụng target từ HEARTBEAT, sender 255/190. CH1–8: 65535 ignore, 0 release; CH9–18: 0 hoặc 65535 ignore, 65534 release. App bench chỉ phát CH1; tất cả kênh khác ignore. Không gửi neutral/release tự động khi STOP.
+STOP, lỗi parser/session, mất Wi-Fi/focus, input/heartbeat/echo quá hạn thu hồi quyền và xóa input; background đóng socket. Không tự ARM, reconnect, gửi min throttle hay DISARM để giả định an toàn. Kernel/TCP có thể đã giữ byte sau lần write cuối. Mất RC phải được FC xử lý bằng cấu hình failsafe đã kiểm chứng; ứng dụng không thay thế dừng độc lập Wi-Fi.
 
-## Bảng tham số
-
-| Tham số | Người dùng cung cấp | Ý nghĩa/việc còn phải xác minh |
-|---|---:|---|
-| MAV_GCS_SYSID | 255 | Sender được nhận là GCS; phiên upstream cũ có thể tên SYSID_MYGCS |
-| MAV_GCS_SYSID_HI | 0 | Dải SYSID phải đối chiếu đúng revision |
-| MAV_OPTIONS | 0 | Đối chiếu logic GCS ở source firmware |
-| RC_OPTIONS | 33 | Theo source: bỏ receiver và bỏ failsafe bit; không có bit ignore override 2 |
-| RC_OVERRIDE_TIME | 0.5 | Thời hạn phía FC; app không bảo đảm timeout này đã áp dụng thật |
-| FS_THR_ENABLE | 1 | Giữ nguyên; cần đánh giá khi không có receiver |
-| FS_GCS_ENABLE | 5 | Giữ nguyên; hành vi theo mode/firmware phải đo |
-| ARMING_RUDDER | Chưa có | Không thử yaw thật; không tự thay |
-| FLTMODE_CH / RCMAP_* | Chưa có | Không phát kênh chế độ, không tự đổi mode |
-| FS_GCS_TIMEOUT / RC_FS_TIMEOUT | Chưa có | Đọc/đo trong quy trình failsafe |
-
-App chỉ đọc tham số. Cache tối đa 256 tên theo phiên; không dùng một PARAM_VALUE cuối đại diện toàn bộ bảng. ACK yêu cầu telemetry và việc quan sát bản tin là hai trạng thái khác nhau.
-
-## Bằng chứng RC
-
-1. Engine tạo permit: bộ đếm generated.
-2. Ghi đủ frame vào socket: bộ đếm TX override, tuổi TX.
-3. FC chấp nhận: cần nguồn kiểm chứng từ FC; không có ACK cho msg70.
-4. RC backend áp dụng: đọc `radio_in`/log phía FC hoặc bằng chứng độc lập phù hợp.
-
-Tương quan RC_CHANNELS không tự chứng minh mức 3/4 và không gia hạn lease. SITL upstream chỉ chứng minh trên binary mô phỏng được ghi trong báo cáo; không thay thế ESP32 afeb9c49 và điện thoại thật.
-
-## DISARMED và CRITICAL là hai trục riêng
-
-Cờ MAV_MODE_FLAG_SAFETY_ARMED từ HEARTBEAT mới xác định ARMED/DISARMED. `system_status=CRITICAL` không tự biến cờ ARM thành không biết, nhưng vẫn là cảnh báo sức khỏe; mặc định không cấp quyền RC. Mô phỏng receiverless đã tái hiện CRITICAL với RC raw0 dù parser/stream hoạt động.
-
-Phép chẩn đoán CRITICAL riêng yêu cầu thêm xác nhận thứ tư, SYS_STATUS mới, RC receiver không khỏe, không có bit cảm biến enabled khác không khỏe ngoài RC/PREARM, RC ban đầu thiếu/raw0 và toàn bộ điều kiện vật lý/CH1/deadman. Gate được kiểm tra trong engine; giữ lease sau phản hồi CH1 không gia hạn thời gian. Đây chỉ là quyền chẩn đoán hữu hạn trong rig đã ngắt nguồn ESC, không chứng minh radio là nguyên nhân duy nhất của CRITICAL. PREARM có thể thất bại do nhiều nguyên nhân; không bỏ cảnh báo hoặc mở ARM.
-
-Sau phép thử CRITICAL, rawRC có thể giữ1520 dù timeout đã hết. Một lease mới không được cấp khi raw đầu vào còn khác0; latch chỉ tồn tại trong lease hiện tại. Cần bằng chứng nguồn/timeout phía FC trước bước tiếp theo, không tự thử lặp vô hạn hoặc coi reconnect là xác nhận phần cứng.
+Các mức quan sát: UI tạo yêu cầu → ghi đủ socket → FC ACK cho lệnh có ACK → HEARTBEAT/RC_CHANNELS phản hồi → nguồn RC/log FC độc lập. RC_CHANNELS_OVERRIDE không có ACK. SITL chỉ chứng minh binary mô phỏng được ghi trong báo cáo; hardware RC, timeout receiverless, động lực và bay của ESP32 còn phải đo riêng.

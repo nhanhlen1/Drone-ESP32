@@ -1,70 +1,47 @@
-> **Cập nhật29/10/2026:** Đây là candidate Codex `dev.drone.controller`, chưa phải bản tiếp nối source Google AI Studio `com.aistudio.esp32drone.krvwpx`. ZIP Google AI Studio chưa chuyển vào workspace được do giới hạn32MiB. Phần protocol/qualification/test đang chuẩn bị để tái sử dụng; xem [kiểm kê nguồn](reports/00_SOURCE_INVENTORY.md) và [báo cáo mới](reports/20261029/VALIDATION.md). Không gọi đây là app hoàn tất theo master prompt mới.
+# Cài đặt và sử dụng ESP32 Drone Controller 0.3.0
 
-# ESP32 Drone Controller — Android Kotlin
+Bản debug chuẩn bị kiểm tra thực tế, **CHƯA KIỂM ĐỊNH BAY**. Toàn bộ thao tác ARM trong cloud chỉ chạy trên SITL. Chưa có bằng chứng điện thoại/ESP32/động lực thật của bản này. Không lắp cánh khi thực hiện các bước bên dưới; cần người vận hành chủ động tại thiết bị.
 
-Ứng dụng mới, package `dev.drone.controller`, cài song song `dev.drone.rcbench`. Không sửa app cũ hoặc firmware. Bản `0.2.1-protocol` phục vụ telemetry, chẩn đoán và kiểm định đầu vào RC; **chưa được nghiệm thu trên điện thoại/ESP32 thật, không dùng để ARM, chạy động cơ hoặc bay**.
+## Cài APK
 
-## Phạm vi thực hiện
+Tải `ESP32-Drone-Controller-0.3.0-rc-control-debug.apk` và đối chiếu SHA-256 trong `SHA256SUMS.json`. Cho phép cài ứng dụng từ nguồn đã chọn trên Android 8.0 trở lên, mở APK rồi cài cập nhật ứng dụng Codex. Không cần Internet khi sử dụng với ESP32. Đóng app điều khiển khác và Mission Planner có thể phát RC trước khi mở phiên mới.
 
-- Android Native Kotlin, ViewModel/StateFlow; bảy trang tiếng Việt, theme tối, icon và splash.
-- TCP Wi-Fi không cần Internet; chọn mạng Wi-Fi qua Android Network binding, connect timeout, I/O nonblocking một actor, partial read/write, parser MAVLink2 có CRC/CRC_EXTRA và buffer hữu hạn.
-- HEARTBEAT, SYS_STATUS, ATTITUDE, GPS, GLOBAL_POSITION, SCALED_PRESSURE, RC_CHANNELS, BATTERY_STATUS, SERVO_OUTPUT_RAW, PARAM_VALUE, COMMAND_ACK, AUTOPILOT_VERSION, EKF và STATUSTEXT. Dữ liệu thiếu/quá hạn hiển thị rõ.
-- Một đợt yêu cầu stream/tham số chỉ đọc mỗi kết nối, ACK/timeout hữu hạn; không `PARAM_SET`, motor test, thay mode hoặc ARM.
-- Hai joystick Mode 2 độc lập **xem trước ngoại tuyến**. Chỉ trang KIỂM TRA RC có đường phát thật: CH1 quanh trim tối đa ±20 µs, tối đa 750 ms, HEARTBEAT DISARMED mới, calibration đã đối chiếu, ba xác nhận vật lý/người vận hành và deadman độc lập; trường hợp CRITICAL có điều kiện chẩn đoán bổ sung và xác nhận thứ tư riêng. Các kênh khác bỏ qua.
-- STOP, mất focus, ra nền, mất Wi-Fi, CRC lỗi, ARMED, HEARTBEAT quá hạn và reconnect thu hồi quyền. Không tự nối lại hoặc khôi phục ga cũ. Phản hồi RC khớp không tự mở khóa cấp vận hành cao hơn.
-- CSV nội bộ, xuất qua Android Documents; không gửi telemetry ra máy chủ ngoài.
-
-Những phần còn khóa/chưa thực hiện và bằng chứng đo được nằm trong [báo cáo kiểm định](reports/VALIDATION.md). Không xem sự có mặt của giao diện hoặc APK là nghiệm thu tính năng bay.
-
-## Build và kiểm thử
-
-Mở **thư mục này** trong Android Studio. Dùng JDK 17 hoặc JDK 21 đã kiểm chứng, SDK Platform 36, Build Tools 35.0.0. Gradle wrapper 8.12 có SHA-256, AGP 8.9.1, Kotlin 2.1.0, Android tối thiểu API 26. Không cần Flutter hoặc nạp firmware.
-
-```bash
-# Trong môi trường cloud đã chuẩn bị:
-source /workspace/tooling/onboarding/android-env.sh
-cd /workspace/Drone-ESP32/android_drone_controller
-bash scripts/verify.sh
-python3 -m unittest discover -s integration -p 'test_*.py' -v
-```
-
-Windows PowerShell trong project:
+Nếu dùng ADB:
 
 ```powershell
-.\gradlew.bat testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
-adb install -r .\app\build\outputs\apk\debug\app-debug.apk
+adb install -r ESP32-Drone-Controller-0.3.0-rc-control-debug.apk
 ```
 
-`assembleDebugAndroidTest` chỉ biên dịch APK test. Chạy instrumentation trên điện thoại đã cho phép USB debugging bằng `gradlew.bat connectedDebugAndroidTest`; lệnh này chưa được chạy khi không có thiết bị. Test SITL yêu cầu binary riêng, xem [integration](docs/INTEGRATION.md). Test bỏ qua không được tính PASS.
+## Kết nối và kiểm tra chỉ đọc
 
-## Kết nối và sử dụng
+1. Tháo cánh; bước telemetry/bench ban đầu ngắt vật lý nguồn ESC. Chọn Wi-Fi `ESP32_DRONE` trong cài đặt Android, giữ kết nối khi điện thoại báo không có Internet.
+2. Vào **KẾT NỐI**, nhập `192.168.4.1` và `5760`, bấm kết nối. Ứng dụng bind socket với Wi-Fi; dữ liệu di động có Internet không thay thế Wi-Fi này.
+3. Kiểm tra SYS/COMP được khám phá từ HEARTBEAT, trạng thái DISARMED, tuổi telemetry, pin/GPS/EKF/STATUSTEXT và tham số đọc về. TCP connected chưa chứng minh FC nhận RC. CRC không xác thực thiết bị khi MAVLink không ký.
+4. Đối chiếu RC1–4 MIN/TRIM/MAX/REVERSED, RCMAP và GCS/override timeout thực. Bản này hỗ trợ ArduCopter quad, mapping 1/2/3/4 và REVERSED=0; cấu hình khác được khóa để tránh điều khiển nhầm. ARMING_RUDDER phải0, FLTMODE_CH phải0 hoặc5–16 và RC1–4_OPTION phải0 để các trục không kích hoạt ARM/DISARM/mode/chức năng phụ. Ứng dụng không ghi đè tham số.
 
-1. Chọn Wi-Fi `ESP32_DRONE` trong cài đặt điện thoại; giữ kết nối khi Android báo không có Internet. Mật khẩu nhập qua cài đặt Wi-Fi, không hardcode trong app.
-2. Mở KẾT NỐI, nhập `192.168.4.1:5760`, bấm kết nối. App chỉ dùng Wi-Fi, không dùng dữ liệu di động cho socket này. Người vận hành xác minh đã chọn đúng AP; unsigned MAVLink không xác thực danh tính thiết bị.
-3. Quan sát SYS/COMP khám phá từ HEARTBEAT và DISARMED. TCP connected chưa phải đủ điều kiện điều khiển. Xem telemetry, tuổi mẫu, STATUSTEXT, tham số và yêu cầu stream trước.
-4. TAY CẦN chỉ xem trước mapping. ARM/DISARM và thay mode vẫn khóa. RC1/2/3/4 tương ứng roll/pitch/ga/yaw theo cấu hình đã cung cấp; chưa tự suy ra mapping cho firmware khác.
-5. Với bench thật: chỉ thực hiện sau mô phỏng đạt và có phép riêng. Xem bài đo cụ thể trong [quy trình phần cứng](docs/HARDWARE_AND_FAILSAFE.md). Không phát RC trong bài đo telemetry dài.
+## Tay cần và thử bốn kênh DISARMED
 
-Đọc [kiểm toán hệ thống](docs/SYSTEM_AUDIT.md), [đối chiếu firmware](docs/FIRMWARE_COMPARISON.md), [MAVLink](docs/MAVLINK.md), [kiến trúc/RC/tham số](docs/ARCHITECTURE_RC.md).
+1. Vào **TAY CẦN**, chọn profile **THỬ RC • DISARMED**. Đọc lại điều kiện RC nếu tham số bắt đầu phiên đã quá hạn. Quá trình đọc chỉ chuẩn bị dữ liệu; phải bấm cho phép riêng sau khi hoàn tất.
+2. Xác nhận đã tháo cánh, cách ly nguồn ESC và cho phép thử. Bật phiên thử rồi thao tác đồng thời hai joystick. Phiên bốn kênh hữu hạn; không được dùng bench để ARM hoặc tiếp quản FC đang ARMED.
+3. Cần trái: kéo dọc thay đổi ga tương đối từ điểm chạm, thả tay giữ ga; kéo ngang điều khiển yaw, thả về giữa. Cần phải: roll ngang/pitch dọc, thả về giữa. Pitch đẩy lên tạo RC thấp theo mapping đã kiểm thử; phải đối chiếu hướng thực trước bước sau.
+4. Theo dõi ba giá trị riêng: kênh yêu cầu, TX ghi socket và RC_CHANNELS do FC báo. RC_CHANNELS_OVERRIDE không có COMMAND_ACK; giá trị trùng chỉ là tương quan. Dùng log FC/Mission Planner để xác minh nguồn RC và trục thực.
+5. STOP hoặc chuyển trang thu hồi quyền; không tự tái phát. Không coi STOP là DISARM hay dừng động cơ.
 
-## Lấy log
+## Phiên điều khiển và ARM/DISARM
 
-Chọn **XUẤT CSV** ở cấu hình/chẩn đoán rồi chọn nơi lưu trên Android. Thao tác xuất thu hồi quyền RC. Queue ghi log hữu hạn; xem dropped/error để biết log có thiếu hay không. File chứa dữ liệu thiết bị, giữ riêng khi chia sẻ.
+Chỉ thực hiện trên rig tháo cánh, có dừng độc lập và người vận hành chịu trách nhiệm. Kiểm tra nguồn động lực/failsafe/timeout vẫn cần phép đo phần cứng riêng. Không dùng bản này để bay.
 
-Với APK debug:
+1. Chọn profile **ĐIỀU KHIỂN**, xác nhận điều kiện và bật phiên khi DISARMED, ga min, các trục giữa, dữ liệu RC/heartbeat và tham số phù hợp. Phiên không tự ARM.
+2. Chờ RC echo bốn kênh mới khớp, SYS_STATUS xác nhận PreArm đạt, EKF attitude hợp lệ và FC báo trên đất. Khi chưa đủ, đọc lý do ARM khóa và STATUSTEXT; sửa nguyên nhân thực, không tắt bảo vệ.
+3. Tích xác nhận riêng cho ARM rồi bấm **GỬI YÊU CẦU ARM**. App gửi lệnh thường, không force. Quan sát riêng “ghi đủ socket”, COMMAND_ACK và HEARTBEAT mới. ACK chấp nhận chưa chứng minh trạng thái đã ARM.
+4. Khi FC ARM trong phiên hợp lệ, RC tiếp tục ở mục tiêu 20 Hz; điều khiển bốn kênh theo joystick. Mất dữ liệu/quyền/session sẽ ngừng phát, không tự gửi min throttle hoặc DISARM. Failsafe phía FC phải được kiểm chứng độc lập.
+5. DISARM cần xác nhận riêng, heartbeat mới và FC báo trên mặt đất. Không có force DISARM trên không. Sau DISARM, quyền điều khiển bị thu hồi; lần tiếp theo phải xác nhận mới.
+6. Chọn STABILIZE hoặc chế độ trong danh mục, tích xác nhận rồi gửi. Danh mục không bảo đảm firmware hỗ trợ mọi chế độ. Chỉ ghi “đã xác nhận” khi ACK và HEARTBEAT mới cùng xác nhận. FC từ chối thì hiển thị kết quả, không tự thử lại.
 
-```powershell
-adb shell run-as dev.drone.controller ls files/logs
-adb exec-out run-as dev.drone.controller cat files/logs/TEN_FILE.csv > controller.csv
-adb logcat -d > android-logcat.txt
-```
+## Sau sự cố
 
-Đổi `TEN_FILE.csv` thành tên thật. Chương trình `integration/telemetry_reliability.py` dùng Python chuẩn, chạy ngoại tuyến trên Windows, lưu raw MAVLink và JSON, **không gửi byte nào**. Dùng `--help` để xem lệnh; kiểm tra stream đã phát ở firmware trước vì recorder không yêu cầu stream.
+Mất Wi-Fi, background/khóa màn hình/mất focus, STOP, dữ liệu quá hạn hoặc lỗi MAVLink sẽ thu hồi quyền. Ứng dụng không tự reconnect và không khôi phục throttle cũ. Xác minh trạng thái FC/failsafe, đưa cần về ga min rồi kết nối và cấp quyền mới. Đừng giả định đóng TCP đã xóa mọi byte còn trong kernel hoặc đã dừng động cơ.
 
-## Đóng gói và quay lại bản cũ
+## Log và hỗ trợ kiểm chứng
 
-Sau build/test: `python3 scripts/package.py`. Bản giao nằm trong `dist/ESP32_DRONE_ANDROID_APP_<versionName>/` gồm APK debug, ZIP source, tài liệu, báo cáo và hash. Không chứa local.properties, cache, credential, binary firmware hoặc khóa ký production.
-
-Ứng dụng cài cạnh bản cũ nên rollback bằng cách đóng/ngắt kết nối app mới, rồi dùng lại app cũ. Gỡ app mới bằng `adb uninstall dev.drone.controller` nếu cần; thao tác này xóa log của app mới, hãy xuất log trước. Không có thay đổi tham số/firmware cần rollback. Không chạy hai ứng dụng cùng tranh quyền RC. Bộ firmware đính kèm chỉ được phân tích đọc; không dùng merged BIN để rollback một cách tùy tiện vì vùng NVS có thể bị ghi đè.
-
-Cloud hiện tại không phải WSL và không có Desktop Windows được mount; bản giao được lưu trong workspace. Không có upload, release GitHub, commit hoặc push từ xa.
+Dùng **XUẤT CSV** trong chẩn đoán/cấu hình; xuất log dừng quyền phát. Log được giữ nội bộ, không gửi đến máy chủ. Kiểm tra dropped/error để biết log có thiếu. Thu thêm logcat, model điện thoại/API, APK SHA-256 và log FC khi báo lỗi. Tham khảo [báo cáo hiện hành](reports/20261029-live/VALIDATION.md), [kiến trúc](docs/ARCHITECTURE_RC.md) và [các bài đo phần cứng](docs/HARDWARE_AND_FAILSAFE.md).

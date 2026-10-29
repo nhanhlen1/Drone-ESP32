@@ -3,6 +3,7 @@ package dev.drone.controller.integration
 import dev.drone.controller.command.ArmCommandStatus
 import dev.drone.controller.command.ArmRequestResult
 import dev.drone.controller.control.ArmState
+import dev.drone.controller.control.SystemHealth
 import dev.drone.controller.mavlink.*
 import dev.drone.controller.transport.*
 import org.junit.Assert.*
@@ -36,7 +37,7 @@ class LiveControllerSitlTest {
                 assertFalse("Bench cannot enable without physical isolation confirmation",session.enableControl(true,false,true))
                 assertTrue("Fresh calibrated four-channel bench can enable: ${session.snapshot().live}",session.enableControl(true,true,true))
                 val expected=listOf(1660,1380,1300,1540)
-                pump(session,"All four requested PWM values reach ArduPilot RC input",3000, .4f,-.3f,.25f,.1f) {
+                val observedDelay=pump(session,"All four requested PWM values reach ArduPilot RC input",3000, .4f,-.3f,.25f,.1f) {
                     session.snapshot().engine.received?.take(4)==expected
                 }
                 val baselineAux=session.snapshot().engine.received!!.drop(4)
@@ -63,6 +64,7 @@ class LiveControllerSitlTest {
                 assertFalse(session.snapshot().live.authority.canTransmit)
                 assertTrue(session.snapshot().live.lastRequested.let{it.isEmpty()||it.getOrNull(2)==1100})
                 println("LIVE_SITL four-axis=$expected, writes=$stopped, reconnect replay=0; hardware NOT VERIFIED")
+                reportEchoDelay("bench-four-axis",observedDelay)
             }
         }
     }
@@ -80,6 +82,12 @@ class LiveControllerSitlTest {
                 assertTrue("Enable explicit ground-control session: ${session.snapshot().live}",session.enableControl(true,false,true))
                 pump(session,"PreArm/SYS_STATUS/EKF/ground/RC prerequisites",45000) { session.snapshot().live.armBlocker==null }
                 assertTrue("Missing active confirmation must deny ARM",session.requestArm(true,false) is ArmRequestResult.Rejected)
+                pump(session,"Non-trim roll reaches FC before negative ARM check",1500,.15f,0f,0f,0f) {
+                    session.snapshot().engine.received?.take(4)==listOf(1560,1500,1100,1500)
+                }
+                assertTrue("ARM with non-trim roll must be rejected",session.requestArm(true,true) is ArmRequestResult.Rejected)
+                assertTrue("Rejected local ARM never reached the wire",wire.commandFrames(400).isEmpty())
+                pump(session,"Neutral RC and all PreArm gates restored",1500) { session.snapshot().live.armBlocker==null }
                 assertTrue("Mode command must be explicitly confirmed",session.requestFlightMode(1,true))
                 pump(session,"ACRO mode ACK and later heartbeat",4000) {
                     val hb=session.snapshot().engine.telemetry["Heartbeat"] as? Telemetry.Heartbeat
@@ -98,7 +106,7 @@ class LiveControllerSitlTest {
                 assertTrue("Expected ARMED heartbeat must preserve production RC authority",session.snapshot().live.authority.canTransmit)
                 val armedStart=wire.rcFrames().size
                 val expected=listOf(1560,1460,1140,1540)
-                pump(session,"Four axes continue after ARMED",2500,.15f,-.1f,.05f,.1f) {
+                val armedObservedDelay=pump(session,"Four axes continue after ARMED",2500,.15f,-.1f,.05f,.1f) {
                     session.snapshot().engine.received?.take(4)==expected
                 }
                 pumpFor(session,1000,.15f,-.1f,.05f,.1f)
@@ -120,6 +128,100 @@ class LiveControllerSitlTest {
                 assertEquals("Only readback parameters: no PARAM_SET",0,wire.frames().count{it.messageId==23})
                 assertTiming(wire)
                 println("LIVE_SITL normal ARM/DISARM ACK+HB confirmed; armed four-axis=$expected; noforce/noPARAM_SET")
+                reportEchoDelay("armed-four-axis",armedObservedDelay)
+            }
+        }
+    }
+
+    @Test fun receiverlessReportedRcOptions33BootstrapsFourChannelsThenEnablesGroundControl() {
+        Simulator(33).use { simulator ->
+            val wire=WireObservation()
+            BenchSession(writer=wire).use { session ->
+                simulator.awaitListening()
+                session.foreground(true)
+                session.selectControlMode(ControlProfile.BENCH_4CH)
+                session.connect("127.0.0.1",simulator.port)
+                configured(session)
+                try {
+                    await("Receiverless valid STANDBY/ACTIVE or narrow RC-only CRITICAL",10000) {
+                        val e=session.snapshot().engine
+                        e.systemHealth in setOf(SystemHealth.STANDBY,SystemHealth.ACTIVE) || e.criticalRcDiagnosticEligible
+                    }
+                } catch(error:AssertionError) {
+                    throw AssertionError("Receiverless startup health snapshot=${session.snapshot()}",error)
+                }
+                val initial=session.snapshot().engine
+                assertEquals(33f,initial.parameters["RC_OPTIONS"]!!.value,0f)
+                val initialStatus=initial.telemetry["SysStatus"] as? Telemetry.SysStatus
+                println("LIVE_SITL receiverless startup health=${initial.systemHealth} heartbeat=${initial.telemetry["Heartbeat"]} SYS_STATUS enabled=${initialStatus?.sensorsEnabled} healthy=${initialStatus?.sensorsHealthy} unhealthy=${initialStatus?.unhealthyEnabledSensors}; CRITICAL branch exercised=${initial.systemHealth==SystemHealth.CRITICAL}")
+                assertTrue("No physical/simulated receiver is accepted with RC_OPTIONS33",session.snapshot().engine.received?.take(4)?.all{it==0}!=false)
+                assertTrue("Narrow RC-only bootstrap requires explicit propeller-off ESC-isolated bench consent: ${session.snapshot().live}",session.enableControl(true,true,true))
+                pump(session,"Receiverless four neutral channels reach RC input and clear radio health",5000) {
+                    val e=session.snapshot().engine
+                    e.received?.take(4)==listOf(1500,1500,1100,1500) && e.systemHealth in setOf(SystemHealth.STANDBY,SystemHealth.ACTIVE)
+                }
+                val receiverlessDelay=pump(session,"Receiverless all-axis CH1–4 input",1800,.1f,-.1f,.1f,.1f) {
+                    session.snapshot().engine.received?.take(4)==listOf(1540,1460,1180,1540)
+                }
+                pump(session,"Neutral before separate control grant",1500) {
+                    session.snapshot().engine.received?.take(4)==listOf(1500,1500,1100,1500)
+                }
+                session.selectControlMode(ControlProfile.CONTROL)
+                assertTrue("CONTROL grant follows verified healthy receiverless bootstrap: ${session.snapshot().live}",session.enableControl(true,false,true))
+                pump(session,"Receiverless healthy CONTROL and strict PreArm gates",45000) {
+                    session.snapshot().live.authority.canTransmit && session.snapshot().live.armBlocker==null
+                }
+                assertTrue("Receiverless ARM with all checks intact",session.requestArm(true,true) is ArmRequestResult.Accepted)
+                pump(session,"Receiverless normal ARM ACK and later heartbeat",5000) {
+                    session.snapshot().engine.arm==ArmState.ARMED && session.snapshot().live.armCommand.status==ArmCommandStatus.CONFIRMED
+                }
+                assertTrue("Expected ARMED never revokes receiverless CONTROL",session.snapshot().live.authority.canTransmit)
+                val receiverlessArmedDelay=pump(session,"Receiverless armed all-axis RC",1500,.1f,-.1f,.025f,.1f) {
+                    session.snapshot().engine.received?.take(4)==listOf(1540,1460,1120,1540)
+                }
+                pump(session,"Receiverless neutral before DISARM",1500) {
+                    session.snapshot().engine.received?.take(4)==listOf(1500,1500,1100,1500)
+                }
+                assertTrue(session.requestArm(false,true) is ArmRequestResult.Accepted)
+                pump(session,"Receiverless DISARM ACK and later heartbeat",5000) {
+                    session.snapshot().engine.arm==ArmState.DISARMED && session.snapshot().live.armCommand.status==ArmCommandStatus.CONFIRMED
+                }
+                assertEquals("No parameter writes from production path",0,wire.frames().count{it.messageId==23})
+                assertEquals("Normal ARM and DISARM only",2,wire.commandFrames(400).size)
+                println("LIVE_SITL RC_OPTIONS33 receiverless: isolated bench bootstrap -> explicit CONTROL -> normal ARM/DISARM; actual hardware NOT VERIFIED")
+                reportEchoDelay("receiverless-bench-four-axis",receiverlessDelay)
+                reportEchoDelay("receiverless-armed-four-axis",receiverlessArmedDelay)
+            }
+        }
+    }
+
+    @Test fun unsafeFcArmingOrModeReadbackLocksBothProfilesBeforeAnyRcOrArmWrite() {
+        data class UnsafeSetup(val rudder:Int=0,val modeChannel:Int=6,val yawOption:Int=0)
+        for(setup in listOf(UnsafeSetup(rudder=1),UnsafeSetup(rudder=2),UnsafeSetup(modeChannel=3),UnsafeSetup(yawOption=41))) {
+            Simulator(32,setup.rudder,setup.modeChannel,setup.yawOption).use { simulator ->
+                val wire=WireObservation()
+                BenchSession(writer=wire).use { session ->
+                    simulator.awaitListening();session.foreground(true)
+                    session.selectControlMode(ControlProfile.BENCH_4CH)
+                    session.connect("127.0.0.1",simulator.port)
+                    configured(session)
+                    val parameters=session.snapshot().engine.parameters
+                    assertEquals(setup.rudder.toFloat(),parameters["ARMING_RUDDER"]!!.value,0f)
+                    assertEquals(setup.modeChannel.toFloat(),parameters["FLTMODE_CH"]!!.value,0f)
+                    assertEquals(setup.yawOption.toFloat(),parameters["RC4_OPTION"]!!.value,0f)
+                    for(profile in listOf(ControlProfile.BENCH_4CH,ControlProfile.CONTROL)) {
+                        session.selectControlMode(profile)
+                        assertFalse("Unsafe FC readback $setup cannot own four channels in $profile",session.enableControl(true,true,true))
+                        repeat(15){session.controlInput(0f,0f,0f,1f);session.controlPulse();Thread.sleep(20)}
+                        assertFalse(session.snapshot().live.authority.canTransmit)
+                        println("LIVE_SITL refused profile=$profile unsafe=$setup reason=${session.snapshot().live.authority.reason}")
+                        assertTrue(session.requestArm(true,true) is ArmRequestResult.Rejected)
+                    }
+                    assertTrue("No yaw/mode gesture can reach the FC",wire.rcFrames().isEmpty())
+                    assertTrue("No ARM command may bypass explicit command flow",wire.commandFrames(400).isEmpty())
+                    assertEquals("Read-only app must never alter FC arming/mode configuration",0,wire.frames().count{it.messageId==23})
+                    println("LIVE_SITL unsafe readback $setup: BENCH_4CH and CONTROL blocked, RC=0 ARM=0 PARAM_SET=0")
+                }
             }
         }
     }
@@ -137,9 +239,13 @@ class LiveControllerSitlTest {
                 val out=socket.getOutputStream();val input=socket.getInputStream()
                 var heartbeat:Telemetry.Heartbeat?=null
                 var preArm=false
+                var requestedStatus=false
                 var next=0L
                 val until=System.nanoTime()+45_000_000_000L
                 while(System.nanoTime()<until&&!preArm) {
+                    if(heartbeat!=null&&!requestedStatus) {
+                        out.write(encoder.setMessageInterval(42,1,1,200000));requestedStatus=true
+                    }
                     if(System.nanoTime()>=next) {
                         out.write(encoder.heartbeat());out.write(encoder.rcOverride(42,1,intArrayOf(1500,1500,1100,1500)))
                         next=System.nanoTime()+50_000_000
@@ -185,21 +291,23 @@ class LiveControllerSitlTest {
     }
 
     private fun configured(session:BenchSession) {
-        val names=(1..4).flatMap{listOf("RC${it}_MIN","RC${it}_TRIM","RC${it}_MAX","RC${it}_REVERSED")}+
-            listOf("RCMAP_ROLL","RCMAP_PITCH","RCMAP_THROTTLE","RCMAP_YAW","RC_OPTIONS","RC_OVERRIDE_TIME")
+        val names=(1..4).flatMap{listOf("RC${it}_MIN","RC${it}_TRIM","RC${it}_MAX","RC${it}_REVERSED","RC${it}_OPTION")}+
+            listOf("RCMAP_ROLL","RCMAP_PITCH","RCMAP_THROTTLE","RCMAP_YAW","RC_OPTIONS","RC_OVERRIDE_TIME","ARMING_RUDDER","FLTMODE_CH")
         await("Read-only FC configuration and fresh heartbeat: ${session.snapshot().tcpStatus}",30000) {
             val e=session.snapshot().engine
             e.arm==ArmState.DISARMED && names.all{it in e.parameters} && ("MAV_GCS_SYSID" in e.parameters || "SYSID_MYGCS" in e.parameters)
         }
     }
-    private fun pump(session:BenchSession,label:String,timeoutMs:Long,roll:Float=0f,pitch:Float=0f,throttle:Float=0f,yaw:Float=0f,condition:()->Boolean) {
-        val until=System.nanoTime()+timeoutMs*1_000_000L
+    private fun pump(session:BenchSession,label:String,timeoutMs:Long,roll:Float=0f,pitch:Float=0f,throttle:Float=0f,yaw:Float=0f,condition:()->Boolean):Double {
+        val start=System.nanoTime()
+        val until=start+timeoutMs*1_000_000L
         while(System.nanoTime()<until) {
             session.controlInput(roll,pitch,throttle,yaw);session.controlPulse()
-            if(condition())return
+            if(condition())return (System.nanoTime()-start)/1_000_000.0
             Thread.sleep(20)
         }
         assertTrue("Timeout $label; snapshot=${session.snapshot()}",condition())
+        return (System.nanoTime()-start)/1_000_000.0
     }
     private fun pumpFor(session:BenchSession,durationMs:Long,roll:Float,pitch:Float,throttle:Float,yaw:Float) {
         val until=System.nanoTime()+durationMs*1_000_000L
@@ -209,9 +317,16 @@ class LiveControllerSitlTest {
         val intervals=wire.rcTimes().zipWithNext{a,b->(b-a)/1_000_000.0}.sorted()
         assertTrue("Enough measured production scheduler intervals",intervals.size>=10)
         val p50=intervals[intervals.size/2];val p95=intervals[((intervals.size-1)*.95).toInt()]
+        val p99=intervals[((intervals.size-1)*.99).toInt()]
+        val jitter=intervals.map{kotlin.math.abs(it-50.0)}.sorted()
+        val jitterP95=jitter[((jitter.size-1)*.95).toInt()]
         assertTrue("Scheduler must not send faster than its 20Hz budget: p50=$p50",p50>=40)
         assertTrue("20Hz target must remain usable under host scheduling: p95=$p95",p95<120)
-        println("LIVE_SITL socket-frame interval p50=${p50}ms p95=${p95}ms; not radio or end-to-end latency")
+        println("LIVE_SITL socket-frame interval n=${intervals.size} p50=${p50}ms p95=${p95}ms p99=${p99}ms max=${intervals.last()}ms jitterP95=${jitterP95}ms; not radio or end-to-end latency")
+    }
+
+    private fun reportEchoDelay(label:String,delayMs:Double) {
+        println("LIVE_SITL observed-RC-delay $label requested-to-first-matching-fresh-RC_CHANNELS=${delayMs}ms; includes 200ms telemetry cadence and 20ms test polling; not one-way network latency")
     }
 
     private class WireObservation:ChannelWriter {
@@ -233,7 +348,7 @@ class LiveControllerSitlTest {
         @Synchronized fun rcTimes()=times.toList()
     }
 
-    private class Simulator(rcOptions:Int):Closeable {
+    private class Simulator(rcOptions:Int,rudderArming:Int=0,flightModeChannel:Int=6,rc4Option:Int=0):Closeable {
         val port=ServerSocket(0).use{it.localPort}
         private val directory=run {
             val root=System.getenv("DRONE_SITL_EVIDENCE_DIR")?.let{File(it).apply{mkdirs()}}
@@ -247,10 +362,10 @@ class LiveControllerSitlTest {
             assumeTrue("BLOCKED: DRONE_SITL_BINARY missing; real SITL NOT VERIFIED",binary!=null&&File(binary).canExecute())
             val identity=if(System.getenv("DRONE_SITL_PARAM_PROFILE")=="modern")"MAV_SYSID 42\nMAV_GCS_SYSID 255\n" else "SYSID_THISMAV 42\nSYSID_MYGCS 255\n"
             val defaults=File(directory,"ground-control.parm").apply {
-                writeText("FRAME_CLASS 1\nFRAME_TYPE 1\n"+identity+"SERIAL0_PROTOCOL 2\nRC_OPTIONS $rcOptions\nRC_OVERRIDE_TIME 0.5\nRC_FS_TIMEOUT 0.5\nLOG_DISARMED 1\n"+
-                    (1..4).joinToString(""){"RC${it}_MIN 1100\nRC${it}_TRIM 1500\nRC${it}_MAX 1900\n"})
+                writeText("FRAME_CLASS 1\nFRAME_TYPE 1\n"+identity+"SERIAL0_PROTOCOL 2\nRC_OPTIONS $rcOptions\nRC_OVERRIDE_TIME 0.5\nRC_FS_TIMEOUT 0.5\nARMING_RUDDER $rudderArming\nFLTMODE_CH $flightModeChannel\nLOG_DISARMED 1\n"+
+                    (1..4).joinToString(""){"RC${it}_MIN 1100\nRC${it}_TRIM 1500\nRC${it}_MAX 1900\nRC${it}_OPTION ${if(it==4)rc4Option else 0}\n"})
             }
-            process=ProcessBuilder(binary!!,"--model","quad","--speedup","1","--serial0","tcp:$port","--defaults",defaults.absolutePath,"--home","-35.363261,149.165230,584,0")
+            process=ProcessBuilder(binary!!,"--model","quad","--speedup","1","--instance","19","--serial0","tcp:$port","--defaults",defaults.absolutePath,"--home","-35.363261,149.165230,584,0")
                 .directory(directory).redirectErrorStream(true).redirectOutput(log).start()
         }
         fun awaitListening()=await("SITL listening (${log.absolutePath})",10000) {

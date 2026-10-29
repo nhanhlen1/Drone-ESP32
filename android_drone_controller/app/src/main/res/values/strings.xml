@@ -1,6 +1,7 @@
 <resources><string name="app_name">ESP32 Drone Controller</string>
     <string name="health_status">Sức khỏe FC: %1$s%2$s</string>
     <string name="connection_status">TCP: %1$s\nHEARTBEAT: %2$s\nMAVLink: %3$s\nRC input đã nghiệm thu: Chưa xác minh\nQuyền ARM / bay: Đang khóa</string>
+    <string name="joystick_live_request">Yêu cầu CH1–CH4: %1$s µs\nĐối chiếu riêng với phản hồi RC từ FC</string>
     <string name="joystick_preview">Xem trước CH1–CH4: %1$s µs\nKhông phát từ joystick</string>
     <string name="bench_state">Trạng thái: %1$s\nSức khỏe FC: %2$s\n%3$s</string>
     <string name="bench_feedback">RC nhận: %1$s µs\nTX socket: %2$s override • phản hồi khớp: %3$s\nFC áp dụng / timeout: Chưa xác minh độc lập</string>

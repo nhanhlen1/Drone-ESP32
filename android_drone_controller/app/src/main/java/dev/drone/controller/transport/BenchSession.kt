@@ -168,7 +168,8 @@ class BenchSession(
                 }
                 engine.tick();val now=clock.nowMs()
                 val old=pending
-                if(old!=null && ((old.permit!=null&&!engine.permitValid(old.permit)) || (old.livePermit!=null&&!live.valid(old.livePermit)) || (old.command!=null&&!live.validCommand(old.command)))) {
+                val oldInvalid=synchronized(engine){old!=null && ((old.permit!=null&&!engine.permitValid(old.permit)) || (old.livePermit!=null&&!live.valid(old.livePermit)) || (old.command!=null&&!live.validCommand(old.command)))}
+                if(oldInvalid && old!=null) {
                     if(old.bytes.position()>0)throw IOException("Thu hồi RC trong frame TCP dở; đóng để không giữ frame cũ")
                     pending=null
                 }

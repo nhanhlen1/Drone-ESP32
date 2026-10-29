@@ -12,7 +12,7 @@ internal class TelemetryRequests {
         "RCMAP_ROLL","RCMAP_PITCH","RCMAP_THROTTLE","RCMAP_YAW",
         "RC_OPTIONS","RC_OVERRIDE_TIME","ARMING_RUDDER","FLTMODE_CH",
         "FS_THR_ENABLE","FS_GCS_ENABLE","FS_GCS_TIMEOUT","RC_FS_TIMEOUT") +
-        (1..4).flatMap { listOf("RC${it}_MIN","RC${it}_TRIM","RC${it}_MAX","RC${it}_REVERSED") }
+        (1..4).flatMap { listOf("RC${it}_MIN","RC${it}_TRIM","RC${it}_MAX","RC${it}_REVERSED","RC${it}_OPTION") }
     private val requested=linkedSetOf<Int>()
     private val observed=linkedSetOf<Int>()
     private var parameterIndex=0

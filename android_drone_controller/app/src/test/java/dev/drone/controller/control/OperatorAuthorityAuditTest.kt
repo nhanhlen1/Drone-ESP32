@@ -103,9 +103,9 @@ class OperatorAuthorityAuditTest {
 
     @Test fun fourChannelBenchLeaseCannotBeExtendedByContinuousInputOrEcho() {
         val r=Rig(AuthorityMode.BENCH_4CH);r.ready();assertTrue(r.enable());r.pulse();r.written()
-        repeat(100) {
+        repeat(600) {
             r.clock.now+=50L;r.heartbeat();r.pulse();r.echo()
-            if(it<99)r.written()
+            if(it<599)r.written()
         }
         assertFalse(r.authority.decision().canTransmit)
     }
@@ -114,6 +114,27 @@ class OperatorAuthorityAuditTest {
         val r=Rig();r.ready(SystemHealth.CRITICAL);r.authority.receiverlessCriticalPattern(true)
         assertFalse(r.enable());r.pulse()
         assertFalse(r.authority.decision().canTransmit)
+    }
+
+    @Test fun stickArmingEnabledReadbackCannotGrantFourChannelAuthority() {
+        for(mode in listOf(AuthorityMode.BENCH_4CH,AuthorityMode.OPERATOR_CONTROL))for(rudder in listOf(1,2)) {
+            val r=Rig(mode);r.ready()
+            r.authority.observeRcParameters(AuthorityRcParameters(r.epoch,r.identity,r.clock.now,255,0,33,.5f,
+                List(4){ChannelCalibration(verified=true)},true,rudderArming=rudder))
+            assertFalse(r.enable());r.pulse()
+            assertFalse(r.authority.decision().canTransmit)
+        }
+    }
+
+    @Test fun primaryStickChannelsCannotAlsoSelectFlightModesOrAuxiliaryActions() {
+        val base=Rig().apply{ready()}
+        val p=AuthorityRcParameters(base.epoch,base.identity,base.clock.now,255,0,33,.5f,
+            List(4){ChannelCalibration(verified=true)},true)
+        for(invalid in listOf(p.copy(flightModeChannel=1),p.copy(flightModeChannel=4),p.copy(auxiliaryOptions=listOf(41,0,0,0)),p.copy(auxiliaryOptions=emptyList()))) {
+            val r=Rig();r.ready();r.authority.observeRcParameters(invalid)
+            assertFalse(r.enable());r.pulse()
+            assertFalse(r.authority.decision().canTransmit)
+        }
     }
 
     @Test fun receiverlessCriticalPatternCannotSurviveANewConnection() {

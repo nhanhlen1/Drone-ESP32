@@ -17,8 +17,8 @@ class TelemetryRequestsTest {
         val requests=TelemetryRequests();val encoder=Mavlink2Encoder();val frames=mutableListOf<MavFrame>()
         val parser=Mavlink2Parser()
         for(time in 0L..60_000L step 50) requests.next(encoder,42,1,time)?.let { frames+=parser.feed(it) }
-        assertEquals(10,frames.count{it.messageId==76})
-        assertEquals(27,frames.count{it.messageId==20})
+        assertEquals(11,frames.count{it.messageId==76}) // Adds EXTENDED_SYS_STATE for landed-state evidence.
+        assertEquals(36,frames.count{it.messageId==20}) // Includes mapping, legacy SYSID and auxiliary-function guards.
         assertTrue(frames.all{it.messageId==76 || it.messageId==20})
         assertNull(requests.next(encoder,42,1,120_000))
         val ack=byteArrayOf(0xff.toByte(),1,0,0,0,0,0,0,255.toByte(),190.toByte())

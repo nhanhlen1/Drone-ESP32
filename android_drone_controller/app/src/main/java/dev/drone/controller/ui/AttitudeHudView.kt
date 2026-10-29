@@ -16,7 +16,7 @@ class AttitudeHudView(context:Context):View(context) {
     private var altitude:String="— m"
     private var voltage:String="— V"
     private var mode:String="CHƯA CÓ FC"
-    init {minimumHeight=dp(116);contentDescription="HUD: chưa có dữ liệu attitude mới"}
+    init {minimumHeight=dp(116).toInt();contentDescription="HUD: chưa có dữ liệu attitude mới"}
     private fun dp(n:Int)=n*resources.displayMetrics.density
     fun render(rollRad:Float?,pitchRad:Float?,yawRad:Float?,height:String,battery:String,modeName:String) {
         roll=rollRad?.takeIf{it.isFinite()};pitch=pitchRad?.takeIf{it.isFinite()};yaw=yawRad?.takeIf{it.isFinite()}
@@ -50,7 +50,7 @@ class AttitudeHudView(context:Context):View(context) {
         paint.textSize=dp(10);paint.color=Palette.text
         canvas.drawText(mode,width/2f,dp(15),paint)
         if(!valid){paint.color=Palette.amber;canvas.drawText("CHƯA CÓ ATTITUDE MỚI",width/2f,height*.72f,paint)}
-        else {paint.color=Palette.muted;canvas.drawText("HƯỚNG ${((yaw!!*180/PI+360)%360).toInt()}°",width/2f,height*.77f,paint)}
+        else {paint.color=Palette.muted;canvas.drawText(yaw?.let{"HƯỚNG ${((it*180/PI+360)%360).toInt()}°"}?:"CHƯA CÓ HƯỚNG",width/2f,height*.77f,paint)}
         paint.color=Palette.text;paint.textSize=dp(11)
         canvas.drawText("$altitude  •  $voltage",width/2f,height-dp(10),paint)
     }

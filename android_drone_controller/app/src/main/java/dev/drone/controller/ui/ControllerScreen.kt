@@ -84,7 +84,8 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
     private val armButton=button("ARM ĐANG KHÓA",Palette.amber).apply{id=R.id.arm_button;isEnabled=false}
     private val disarmButton=button("DISARM ĐANG KHÓA",Palette.amber).apply{id=R.id.disarm_button;isEnabled=false}
     private val commandState=label("Chưa có yêu cầu ARM/DISARM",11,Palette.muted)
-    private val modeSelect=Spinner(activity).apply{id=R.id.mode_selector}
+    private val modeSelect=button("Ổn định / STABILIZE").apply{id=R.id.mode_selector;contentDescription="Chế độ đề nghị: chạm để chuyển lựa chọn kế tiếp"}
+    private var selectedModeIndex=0
     private val modeConfirm=check("Tôi xác nhận yêu cầu đổi chế độ một lần").apply{id=R.id.mode_confirm}
     private val modeApply=button("GỬI YÊU CẦU CHẾ ĐỘ").apply{id=R.id.mode_apply}
     private val modeState=label("Chế độ do FC xác nhận qua HEARTBEAT",11,Palette.muted)
@@ -204,13 +205,15 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
             addView(label("Không gửi force ARM/DISARM. ACK chấp nhận chưa chứng minh ARMED; cần HEARTBEAT mới. FC vẫn thực hiện toàn bộ kiểm tra PreArm và bảo vệ của ArduPilot.",11,Palette.muted),full(7))
         }
         card(page,"CHẾ ĐỘ ARDUCOPTER").apply {
-            modeSelect.adapter=ArrayAdapter(activity,android.R.layout.simple_spinner_dropdown_item,modeChoices.map{it.second})
-            modeSelect.onItemSelectedListener=object:AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent:AdapterView<*>?,view:View?,position:Int,id:Long){(view as? TextView)?.setTextColor(Palette.text);modeConfirm.isChecked=false}
-                override fun onNothingSelected(parent:AdapterView<*>?){}
+            modeSelect.setOnClickListener {
+                selectedModeIndex=(selectedModeIndex+1)%modeChoices.size
+                modeSelect.text=modeChoices[selectedModeIndex].second
+                modeSelect.contentDescription="Chế độ đề nghị: ${modeChoices[selectedModeIndex].second}; chạm để chọn tiếp"
+                modeConfirm.isChecked=false
             }
+            addView(label("Chạm nút để chuyển lựa chọn; xác nhận rồi gửi yêu cầu. Chọn tên chưa gửi lệnh và không làm mất focus điều khiển.",11,Palette.muted),full(5))
             addView(modeSelect,full(5));addView(modeConfirm)
-            modeApply.setOnClickListener{val confirmed=modeConfirm.isChecked;modeConfirm.isChecked=false;actions.requestFlightMode(modeChoices[modeSelect.selectedItemPosition].first,confirmed)}
+            modeApply.setOnClickListener{val confirmed=modeConfirm.isChecked;modeConfirm.isChecked=false;actions.requestFlightMode(modeChoices[selectedModeIndex].first,confirmed)}
             addView(modeApply,full(4));addView(modeState,full(7))
             addView(label("Danh mục đề nghị cho ArduCopter; hỗ trợ thực tế do FC quyết định. Không coi tên trong danh sách là đã được FC hỗ trợ. Phải xem ACK và chế độ HEARTBEAT mới; app không tự thử lại lệnh bị từ chối.",11,Palette.muted),full(7))
         }
@@ -304,7 +307,7 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         liveState.text="${when(live.profile){ControlProfile.READ_ONLY->"CHỈ ĐỌC";ControlProfile.BENCH_4CH->"THỬ RC • DISARMED";ControlProfile.CONTROL->"ĐIỀU KHIỂN • CHƯA KIỂM ĐỊNH BAY"}}\n${authorityName(live.authority.stage)}: ${live.authority.reason}"
         liveState.setTextColor(if(liveEnabled)Palette.mint else Palette.amber)
         liveDetail.text=live.authority.reason
-        liveEvidence.text="TX socket: ${live.lastSent?.joinToString(" / ")?:"Chưa có"} • ${live.rcWriteCount} gói\nFC RC_CHANNELS: ${live.lastEcho?.joinToString(" / ")?:"Chưa có"} • ${if(live.authority.rcEchoVerified)"Khớp lệnh mới" else "Chưa khớp lệnh mới"}"
+        liveEvidence.text="TX socket: ${live.lastSent?.joinToString(" / ")?:"Chưa có"} • ${live.rcWriteCount} gói / ${number(s.txHz,0)} Hz\nFC RC_CHANNELS: ${live.lastEcho?.joinToString(" / ")?:"Chưa có"} • ${if(live.authority.rcEchoVerified)"Khớp lệnh mới" else "Chưa khớp lệnh mới"}"
         if(lastLiveEnabled&&!liveEnabled)resetInputs()
         lastLiveEnabled=liveEnabled
         enableControl.isEnabled=e.connected&&e.arm==ArmState.DISARMED&&live.profile!=ControlProfile.READ_ONLY&&!liveEnabled
@@ -317,16 +320,16 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         val canDisarm=e.connected&&e.arm==ArmState.ARMED&&live.profile==ControlProfile.CONTROL
         disarmButton.text=if(canDisarm)"GỬI YÊU CẦU DISARM" else "DISARM ĐANG KHÓA"
         disarmButton.isEnabled=canDisarm
-        commandState.text="${commandName(live.armCommand.status.name)}: ${live.armCommand.reason}\n${live.armBlocker?.let{"Điều kiện ARM: $it"}?:"Điều kiện ứng dụng đạt; FC vẫn kiểm tra PreArm"}"
+        commandState.text="${commandName(live.armCommand.status.name)}: ${live.armCommand.reason}\nGhi đủ socket: ${if(live.armCommand.socketWritten)"Có" else "Chưa"} • ACK: ${live.armCommand.ackResult?:"Chưa có"} • HEARTBEAT xác nhận: ${if(live.armCommand.heartbeatConfirmed)"Có" else "Chưa"}\n${live.armBlocker?.let{"Điều kiện ARM: $it"}?:"Điều kiện ứng dụng đạt; FC vẫn kiểm tra PreArm"}"
         modeApply.isEnabled=e.connected&&e.heartbeatAgeMs?.let{it<1500}==true
-        modeState.text="${live.modeCommand.status}\nMã chế độ yêu cầu: ${live.modeCommand.requestedMode?:"Chưa có"} • ACK: ${live.modeCommand.ackResult?:"Chưa có"} • HEARTBEAT xác nhận: ${if(live.modeCommand.heartbeatConfirmed)"Có" else "Chưa có"}"
+        modeState.text="${live.modeCommand.status}\nMã chế độ yêu cầu: ${live.modeCommand.requestedMode?:"Chưa có"} • Ghi đủ socket: ${if(live.modeCommand.socketWritten)"Có" else "Chưa"} • ACK: ${live.modeCommand.ackResult?:"Chưa có"} • HEARTBEAT xác nhận: ${if(live.modeCommand.heartbeatConfirmed)"Có" else "Chưa có"}"
         val attitude=(e.telemetry["Attitude"] as? Telemetry.Attitude)?.takeIf{e.telemetryAgeMs["Attitude"]?.let{age->age<2000}==true}
         val sys=(e.telemetry["SysStatus"] as? Telemetry.SysStatus)?.takeIf{e.telemetryAgeMs["SysStatus"]?.let{age->age<5000}==true}
         val global=(e.telemetry["GlobalPosition"] as? Telemetry.GlobalPosition)?.takeIf{e.telemetryAgeMs["GlobalPosition"]?.let{age->age<3000}==true}
         val hb=(e.telemetry["Heartbeat"] as? Telemetry.Heartbeat)?.takeIf{e.heartbeatAgeMs?.let{age->age<1500}==true}
-        hud.render(attitude?.rollRad,attitude?.pitchRad,attitude?.yawRad,global?.let{number(it.relativeAltitudeMm/1000.0)+" m"}?:"— m",sys?.takeIf{it.voltageMv!=65535}?.let{number(it.voltageMv/1000.0)+" V"}?:"— V",hb?.let{modeName(it.customMode)}?:"CHƯA CÓ FC")
+        hud.render(attitude?.rollRad,attitude?.pitchRad,attitude?.yawRad,global?.let{number(it.relativeAltitudeMm/1000.0)+" m"}?:"— m",sys?.takeIf{it.voltageMv in 1..65534}?.let{number(it.voltageMv/1000.0)+" V"}?:"— V",hb?.let{modeName(it.customMode)}?:"CHƯA CÓ FC")
         connection.text=tr(R.string.connection_status, if(e.connected)"Đã kết nối" else "Chưa kết nối", age(e.heartbeatAgeMs), if(e.targetSystem!=null)"Đã nhận autopilot" else "Chưa xác minh")
-        preview.text=tr(R.string.joystick_preview, channels(e.previewChannels))
+        preview.text=if(liveEnabled)tr(R.string.joystick_live_request,live.lastRequested.joinToString(" / ")) else tr(R.string.joystick_preview,channels(e.previewChannels))
         benchState.text=tr(R.string.bench_state, stateName(e.state.name), healthName(e.systemHealth), e.reason)
         val critical=e.systemHealth==SystemHealth.CRITICAL
         criticalConsent.visibility=if(critical)VISIBLE else GONE
@@ -373,7 +376,7 @@ class ControllerScreen(private val activity:Activity,private val actions:UiActio
         if(s.engine.heartbeatAgeMs==null||s.engine.heartbeatAgeMs>=1500)lines+="DỮ LIỆU QUÁ HẠN / CHƯA CÓ HEARTBEAT MỚI\n"
         fun no()="Chưa có dữ liệu"
         lines+="Chế độ ArduCopter: ${heartbeat?.let{modeName(it.customMode)}?:no()}"
-        lines+="Pin: ${sys?.let{if(it.voltageMv==65535)no() else number(it.voltageMv/1000.0)+" V"}?:no()}"
+        lines+="Pin: ${sys?.let{if(it.voltageMv==65535)no() else if(it.voltageMv==0)"Không hợp lệ (FC báo 0 mV)" else number(it.voltageMv/1000.0)+" V"}?:no()}"
         lines+="Dòng / % pin / thời gian còn lại: Chưa xác minh phép đo INA219"
         lines+="Cảnh báo pin từ FC: ${sys?.let{if(it.unhealthyEnabledSensors and (1L shl 25)!=0L)"CẢM BIẾN PIN LỖI / FAILSAFE CẦN KIỂM TRA" else "SYS_STATUS không báo cảm biến pin lỗi; xem STATUSTEXT"}?:no()}"
         lines+="\nRoll / Pitch / Yaw (độ)\n${attitude?.let{listOf(it.rollRad,it.pitchRad,it.yawRad).joinToString(" / "){rad->number(Math.toDegrees(rad.toDouble()))}}?:no()}"

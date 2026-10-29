@@ -32,7 +32,7 @@ class SessionLogger(
             file.bufferedWriter().use { out ->
                 val header="time_monotonic_ms,time_wall_ms,tcp,armed,heartbeat_age_ms,rc_age_ms,bench_enabled,bench_tx_channels,rx_channels,override_count,crc_errors,bench_reason,last_event,"+
                     "control_profile,authority_mode,authority_stage,connection_epoch,authority_epoch,control_tx_allowed,requested_channels,control_tx_channels,control_echo_channels,control_write_count,rc_echo_correlated,control_reason,authority_transition,"+
-                    "arm_intent_id,arm_requested,arm_status,arm_socket_written,arm_ack_result,arm_heartbeat_confirmed,arm_reason,arm_blocker,requested_mode,mode_status,mode_ack_result,mode_heartbeat_confirmed,"+
+                    "arm_intent_id,arm_requested,arm_status,arm_socket_written,arm_ack_result,arm_heartbeat_confirmed,arm_reason,arm_blocker,requested_mode,mode_status,mode_socket_written,mode_ack_result,mode_heartbeat_confirmed,"+
                     "last_tx_age_ms,last_rx_age_ms,rc_interval_p50_ms,rc_interval_p95_ms,rc_interval_p99_ms,rc_jitter_p95_ms,gcs_heartbeats_written,sequence_gaps,duplicate_frames,reordered_frames,signed_rejected"
                 out.appendLine(header)
                 var bytes=header.toByteArray(Charsets.UTF_8).size.toLong()+1
@@ -65,7 +65,7 @@ class SessionLogger(
             live?.profile,authority?.mode,authority?.stage,authority?.connectionEpoch,authority?.authorityEpoch,authority?.canTransmit,
             live?.lastRequested?.joinToString(";"),live?.lastSent?.joinToString(";"),live?.lastEcho?.joinToString(";"),live?.rcWriteCount,authority?.rcEchoVerified,authority?.reason,authority?.transitions?.lastOrNull(),
             arm?.intent?.id,arm?.intent?.desiredArmed,arm?.status,arm?.socketWritten,arm?.ackResult,arm?.heartbeatConfirmed,arm?.reason,live?.armBlocker,
-            mode?.requestedMode,mode?.status,mode?.ackResult,mode?.heartbeatConfirmed,state.lastTxAgeMs,state.lastRxAgeMs,
+            mode?.requestedMode,mode?.status,mode?.socketWritten,mode?.ackResult,mode?.heartbeatConfirmed,state.lastTxAgeMs,state.lastRxAgeMs,
             state.rcTiming.intervalP50Ms,state.rcTiming.intervalP95Ms,state.rcTiming.intervalP99Ms,state.rcTiming.jitterP95Ms,state.gcsHeartbeatsWritten,
             state.parserDiagnostics.sequenceGaps,state.parserDiagnostics.duplicateFrames,state.parserDiagnostics.reorderedFrames,state.parserDiagnostics.signedRejected).joinToString(","){cell(it)}
         if(!queue.offer(row))dropped.incrementAndGet()
